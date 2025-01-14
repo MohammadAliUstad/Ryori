@@ -1,5 +1,3 @@
-Here's a beautifully crafted GitHub README file for your Ryori project. 
-
 ---
 
 # 🌸 Ryori - Your Personalized Food Companion
@@ -51,7 +49,7 @@ Welcome to **Ryori**, a sleek and simple food application designed to make explo
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/yourusername/ryori.git
+   git clone https://github.com/MohammadAliUstad/Ryori.git
    cd ryori
    ```
 2. **Open in Android Studio**: Import the project and sync Gradle.  
