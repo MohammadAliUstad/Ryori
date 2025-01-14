@@ -61,22 +61,16 @@ Welcome to **Ryori**, a sleek and simple food application designed to make explo
 
 Contributions are welcome!  
 Feel free to fork the repository and submit a pull request for suggestions or improvements.  
-
----
-
-## 📜 License
-
-This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.  
-
+ 
 ---
 
 ## 📞 Contact
 
 Got feedback or questions? Reach out to me at:  
-📧 **your.email@example.com**
+📧 **Mohammadaliustad@gmail.com**
 
 ---
 
-**Made with ❤️ by Ali**
+**Made with ❤️ by Yugen Tech**
 
 --- 
