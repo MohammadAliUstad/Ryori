@@ -1,5 +1,3 @@
----
-
 # 🌸 Ryori - Your Personalized Food Companion
 
 Welcome to **Ryori**, a sleek and simple food application designed to make exploring and discovering meals effortless and delightful. Powered by **TheMealDB API**, Ryori serves as your gateway to a world of delicious recipes and meal inspirations.
@@ -35,13 +33,21 @@ Welcome to **Ryori**, a sleek and simple food application designed to make explo
 
 ---
 
-## 📷 Screenshots
+## 📸 Screenshots
 
-![Home Screen](https://via.placeholder.com/400x300?text=Home+Screen)  
-*Suggested meal at your fingertips.*
+<div align="center">
+  
+<img src="Screenshots/home_screen.png" width="30%"/>
+<img src="Screenshots/explore_screen.png" width="30%"/>
+<img src="Screenshots/meal_details.png" width="30%"/>
 
-![Explore Screen](https://via.placeholder.com/400x300?text=Explore+Screen)  
-*Discover recipes by categories and regions.*
+<br/><br/>
+
+<img src="Screenshots/category_list.png" width="30%"/>
+<img src="Screenshots/area_list.png" width="30%"/>
+<img src="Screenshots/meal_search.png" width="30%"/>
+
+</div>
 
 ---
 
@@ -51,26 +57,3 @@ Welcome to **Ryori**, a sleek and simple food application designed to make explo
    ```bash
    git clone https://github.com/MohammadAliUstad/Ryori.git
    cd ryori
-   ```
-2. **Open in Android Studio**: Import the project and sync Gradle.  
-3. **Run**: Build and run the app on an emulator or physical device.  
-
----
-
-## 🌟 Contributing
-
-Contributions are welcome!  
-Feel free to fork the repository and submit a pull request for suggestions or improvements.  
- 
----
-
-## 📞 Contact
-
-Got feedback or questions? Reach out to me at:  
-📧 **Mohammadaliustad@gmail.com**
-
----
-
-**Made with ❤️ by Yugen Tech**
-
---- 
