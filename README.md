@@ -57,3 +57,20 @@ Welcome to **Ryori**, a sleek and simple food application designed to make explo
    ```bash
    git clone https://github.com/MohammadAliUstad/Ryori.git
    cd ryori
+   ```
+2. **Open in Android Studio**: Import the project and sync Gradle.  
+3. **Run**: Build and run the app on an emulator or physical device.  
+
+---
+
+## 🌟 Contributing
+
+Contributions are welcome!  
+Feel free to fork the repository and submit a pull request for suggestions or improvements.  
+ 
+---
+
+## 📞 Contact
+
+Got feedback or questions? Reach out to me at:  
+📧 **Mohammadaliustad@gmail.com**
