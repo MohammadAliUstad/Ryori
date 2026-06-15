@@ -1,23 +1,24 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
     id("kotlin-kapt")
     id("com.google.devtools.ksp")
-    id("com.google.dagger.hilt.android")
 }
 
 android {
     namespace = "com.yugentech.ryori"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.yugentech.ryori"
         minSdk = 33
-        targetSdk = 35
+        targetSdk = 37
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -36,8 +37,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
+    kotlin {
+        compilerOptions {
+            jvmTarget = JvmTarget.JVM_17
+        }
     }
 
     buildFeatures {
@@ -46,43 +49,45 @@ android {
 }
 
 dependencies {
-    // Dagger-Hilt
-    implementation(libs.hilt.android)
-    kapt(libs.hilt.android.compiler)
+    // Koin
+    implementation(libs.koin.android)
+    implementation(libs.koin.androidx.compose)
+    implementation(libs.koin.core)
+
+    // Ktor
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.okhttp)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
+    implementation(libs.ktor.client.logging)
+
+    // Kotlinx Serialization
+    implementation(libs.kotlinx.serialization.json)
+
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.lifecycle.livedata.ktx)
 
-    // Jetpack Compose Hilt integration
-    implementation(libs.androidx.hilt.navigation.compose)
-
-    // Retrofit
-    implementation(libs.retrofit)
-    implementation(libs.converter.moshi)
-
-    // Moshi
-    implementation(libs.moshi)
-    implementation(libs.moshi.kotlin)
-    ksp(libs.moshi.kotlin.codegen)
-
-    // Coroutine support for Retrofit
-    implementation(libs.adapter.rxjava3)
-
     // Coil
     implementation(libs.coil.compose)
+    implementation(libs.haze)
 
     // Navigation
     implementation(libs.androidx.navigation.compose)
-    implementation(libs.accompanist.navigation.animation)
+
+    // Room (API cache, recently viewed, kitchen stats)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
 
     // DataStore
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.datastore.core)
 
-    // BOM
-    implementation(platform(libs.androidx.compose.bom))
-
     // Splash Screen
     implementation(libs.androidx.core.splashscreen)
+
+    // Timber
+    implementation(libs.timber)
 
     // Extended Icons
     implementation(libs.androidx.material.icons.extended)
