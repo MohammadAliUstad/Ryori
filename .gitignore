@@ -18,3 +18,7 @@ node_modules/
 package-lock.json
 package.json
 
+
+# Kotlin compiler caches and per-machine IDE state
+.kotlin/
+/.idea/deviceManager.xml

@@ -25,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
@@ -131,6 +132,9 @@ fun RecipeCardRow(
     onClick: (RecipeSummary) -> Unit,
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
+    // null measures the names (see above). Pass 2 to always reserve two lines, e.g. when a
+    // placeholder row of the same height is shown while loading.
+    titleLines: Int? = null,
     trailing: (@Composable () -> Unit)? = null
 ) {
     val textMeasurer = rememberTextMeasurer()
@@ -139,7 +143,7 @@ fun RecipeCardRow(
     // Card width minus the name's horizontal padding.
     val textWidthPx = with(density) { (RecipeRowCardWidth - MaterialTheme.spacing.xs * 2).roundToPx() }
 
-    val titleLines = remember(recipes, textStyle, textWidthPx) {
+    val measuredTitleLines = remember(recipes, textStyle, textWidthPx) {
         val anyWraps = recipes.any { recipe ->
             textMeasurer.measure(
                 text = recipe.name,
@@ -150,6 +154,7 @@ fun RecipeCardRow(
         }
         if (anyWraps) 2 else 1
     }
+    val cardTitleLines = titleLines ?: measuredTitleLines
 
     LazyRow(
         contentPadding = contentPadding,
@@ -160,12 +165,59 @@ fun RecipeCardRow(
             RecipeCard(
                 recipe = recipe,
                 onClick = onClick,
-                titleLines = titleLines,
+                titleLines = cardTitleLines,
                 modifier = Modifier.width(RecipeRowCardWidth)
             )
         }
         if (trailing != null) {
             item(key = "row_trailing") { trailing() }
+        }
+    }
+}
+
+// Loading placeholder for RecipeCardRow: same card width, square photo, spacing and title
+// height (titleLines), so swapping in the real row doesn't move anything on screen.
+@Composable
+fun RecipeCardRowPlaceholder(
+    contentPadding: PaddingValues,
+    shimmer: Color,
+    modifier: Modifier = Modifier,
+    titleLines: Int = 2,
+    count: Int = 4
+) {
+    LazyRow(
+        contentPadding = contentPadding,
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.s),
+        userScrollEnabled = false,
+        modifier = modifier
+    ) {
+        items(count) {
+            Column(modifier = Modifier.width(RecipeRowCardWidth)) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(1f)
+                        .clip(RoundedCornerShape(MaterialTheme.corners.large))
+                        .background(shimmer)
+                )
+                // An empty Text with the card title's style and line count takes exactly the
+                // height the name will.
+                Text(
+                    text = "",
+                    style = recipeTitleStyle(),
+                    minLines = titleLines,
+                    modifier = Modifier
+                        .padding(
+                            start = MaterialTheme.spacing.xs,
+                            end = MaterialTheme.spacing.xs,
+                            top = MaterialTheme.spacing.s,
+                            bottom = MaterialTheme.spacing.xs
+                        )
+                        .fillMaxWidth(0.8f)
+                        .clip(RoundedCornerShape(MaterialTheme.corners.small))
+                        .background(shimmer)
+                )
+            }
         }
     }
 }

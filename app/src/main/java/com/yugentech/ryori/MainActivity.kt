@@ -14,20 +14,42 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import com.yugentech.ryori.navigation.host.AppNavHost
 import com.yugentech.ryori.theme.RyoriTheme
 import com.yugentech.ryori.theme.config.ThemeMode
 import com.yugentech.ryori.theme.viewmodel.ThemeViewModel
-import org.koin.androidx.compose.koinViewModel
+import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MainActivity : ComponentActivity() {
+
+    private val themeViewModel: ThemeViewModel by viewModel()
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Same order as Quill: the splash screen is installed before super.onCreate.
+        val splashScreen = installSplashScreen()
+
+        // Like Quill, the splash stays up for a minimum time so its animation can play. On top
+        // of that it waits for the saved theme, so the first frame already uses the right
+        // light/dark mode instead of flashing the placeholder light theme.
+        val animationReady = MutableStateFlow(false)
+        lifecycleScope.launch {
+            delay(1000.milliseconds)
+            animationReady.value = true
+        }
+
         super.onCreate(savedInstanceState)
-        installSplashScreen()
+        splashScreen.setKeepOnScreenCondition {
+            !animationReady.value || !themeViewModel.isLoaded.value
+        }
+
         setContent {
             val navController = rememberNavController()
-            val themeViewModel: ThemeViewModel = koinViewModel()
             val themeConfiguration by themeViewModel.themeConfiguration.collectAsStateWithLifecycle()
 
             val darkTheme = when (themeConfiguration.themeMode) {

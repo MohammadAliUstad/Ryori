@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -41,6 +42,10 @@ fun MainScreen(
     onBrowse: (RecipeFilter, String) -> Unit,
     onAbout: () -> Unit,
     onAppearance: () -> Unit,
+    onRecentlyViewed: () -> Unit,
+    onWhatsNew: () -> Unit,
+    requestedTab: String? = null,
+    onTabRequestHandled: () -> Unit = {}
 ) {
     val context = LocalContext.current
 
@@ -48,6 +53,15 @@ fun MainScreen(
     // Saved as an index since the BottomBarScreen objects themselves aren't saveable.
     var currentTabIndex by rememberSaveable { mutableIntStateOf(homeIndex) }
     val currentTab = tabs[currentTabIndex]
+
+    // e.g. "Find something to cook" on an empty Recently viewed screen lands on Search.
+    LaunchedEffect(requestedTab) {
+        if (requestedTab == null) return@LaunchedEffect
+        tabs.indexOfFirst { it.route == requestedTab }
+            .takeIf { it >= 0 }
+            ?.let { currentTabIndex = it }
+        onTabRequestHandled()
+    }
 
     var showExitDialog by remember { mutableStateOf(false) }
 
@@ -108,6 +122,8 @@ fun MainScreen(
                         BottomBarScreen.More -> MoreScreen(
                             onAbout = onAbout,
                             onAppearance = onAppearance,
+                            onRecentlyViewed = onRecentlyViewed,
+                            onWhatsNew = onWhatsNew,
                             contentPadding = innerPadding
                         )
                     }

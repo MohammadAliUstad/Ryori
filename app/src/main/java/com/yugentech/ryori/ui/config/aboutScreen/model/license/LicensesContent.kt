@@ -28,6 +28,11 @@ object LicensesContent {
             url = "https://coil-kt.github.io/coil/"
         ),
         Library(
+            name = "Lottie for Compose",
+            author = "Airbnb",
+            url = "https://github.com/airbnb/lottie-android"
+        ),
+        Library(
             name = "Timber",
             author = "Jake Wharton",
             url = "https://github.com/JakeWharton/timber"

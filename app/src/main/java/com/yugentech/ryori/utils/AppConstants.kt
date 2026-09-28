@@ -5,13 +5,13 @@ object AppConstants {
     const val EMPTY = ""
     const val KOFI_URL = "https://ko-fi.com/yugentech"
     const val SUPPORT_EMAIL = "mailto:yugentech.kazuki@gmail.com"
-    const val GITHUB_URL = "https://github.com/MohammadAliUstad/Sessions"
+    const val GITHUB_URL = "https://github.com/MohammadAliUstad/Ryori"
     const val PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=$APP_PACKAGE_NAME"
-    const val SHARE_MESSAGE = "Check out Sessions, a minimal pomodoro focus app\n${PLAY_STORE_URL}"
-    const val MARKET_URL = "market://details?id=com.yugentech.sessions"
+    const val SHARE_MESSAGE = "Check out Ryori, a cosy recipe app for meals and mocktails\n${PLAY_STORE_URL}"
+    const val MARKET_URL = "market://details?id=$APP_PACKAGE_NAME"
 
 
-    const val PRIVACY_POLICY_URL = "https://sites.google.com/view/sessionsprivacypolicy/home"
-    const val TERMS_OF_SERVICE_URL = "https://sites.google.com/view/sessionstermsofservice/home"
+    const val PRIVACY_POLICY_URL = "https://sites.google.com/view/ryoriprivacypolicy/home"
+    const val TERMS_OF_SERVICE_URL = "https://sites.google.com/view/ryoritermsofservice/home"
     const val PABLO_STANLEY_URL = "https://www.pablostanley.com/"
 }

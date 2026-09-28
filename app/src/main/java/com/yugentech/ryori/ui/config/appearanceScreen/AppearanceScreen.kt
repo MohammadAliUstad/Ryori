@@ -73,7 +73,7 @@ fun AppearanceScreen(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
                 top = paddingValues.calculateTopPadding(),
-                bottom = paddingValues.calculateBottomPadding() + MaterialTheme.spacing.s,
+                bottom = paddingValues.calculateBottomPadding(),
                 start = MaterialTheme.spacing.m,
                 end = MaterialTheme.spacing.m
             ),

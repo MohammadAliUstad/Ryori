@@ -2,6 +2,8 @@ package com.yugentech.ryori.di.module
 
 import com.yugentech.ryori.api.viewmodel.ExploreViewModel
 import com.yugentech.ryori.api.viewmodel.HomeViewModel
+import com.yugentech.ryori.api.viewmodel.MoreViewModel
+import com.yugentech.ryori.api.viewmodel.RecentlyViewedViewModel
 import com.yugentech.ryori.api.viewmodel.RecipeListViewModel
 import com.yugentech.ryori.api.viewmodel.RecipeViewModel
 import org.koin.core.module.dsl.viewModel
@@ -34,6 +36,20 @@ val viewModelModule = module {
     viewModel {
         RecipeListViewModel(
             repository = get()
+        )
+    }
+
+    viewModel {
+        MoreViewModel(
+            settingsRepository = get(),
+            kitchen = get(),
+            api = get()
+        )
+    }
+
+    viewModel {
+        RecentlyViewedViewModel(
+            kitchen = get()
         )
     }
 }

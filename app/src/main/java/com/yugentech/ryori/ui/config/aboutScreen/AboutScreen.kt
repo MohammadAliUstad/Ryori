@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -41,7 +42,9 @@ import com.yugentech.ryori.ui.config.settingsScreen.components.SettingsListItem
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutScreen(
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onNavigateToLicenses: () -> Unit,
+    onNavigateToMoreApps: () -> Unit
 ) {
     val context = LocalContext.current
     val layoutDirection = LocalLayoutDirection.current
@@ -51,12 +54,19 @@ fun AboutScreen(
     val supportItems = remember(context) {
         AboutContent.getSupportItems(
             context = context,
-            onDonateClick = { /* Handle donate */ }
+            onMoreAppsClick = onNavigateToMoreApps
         )
     }
 
     val communityItems = remember(context) {
         AboutContent.getCommunityItems(context)
+    }
+
+    val legalItems = remember(context) {
+        AboutContent.getLegalItems(
+            context = context,
+            onNavigateToLicenses = onNavigateToLicenses
+        )
     }
 
     Scaffold(
@@ -81,7 +91,7 @@ fun AboutScreen(
                 scrollBehavior = scrollBehavior,
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surface,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
                     navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
                     titleContentColor = MaterialTheme.colorScheme.onSurface
                 )
@@ -100,7 +110,7 @@ fun AboutScreen(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs),
                 contentPadding = PaddingValues(
-                    bottom = navBarPadding.calculateBottomPadding() + MaterialTheme.spacing.s,
+                    bottom = navBarPadding.calculateBottomPadding(),
                     start = MaterialTheme.spacing.m + scaffoldPadding.calculateStartPadding(layoutDirection),
                     end = MaterialTheme.spacing.m + scaffoldPadding.calculateEndPadding(layoutDirection)
                 )
@@ -127,6 +137,18 @@ fun AboutScreen(
                         leadingIcon = item.icon,
                         index = index,
                         totalCount = communityItems.size,
+                        onClick = item.onClick
+                    )
+                }
+
+                item { SectionHeader(Icons.Filled.Info, "Legal") }
+                itemsIndexed(legalItems) { index, item ->
+                    SettingsListItem(
+                        title = item.title,
+                        subtitle = item.subtitle,
+                        leadingIcon = item.icon,
+                        index = index,
+                        totalCount = legalItems.size,
                         onClick = item.onClick
                     )
                 }

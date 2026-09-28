@@ -1,6 +1,9 @@
 [versions]
 room = "2.8.4"
 haze = "1.7.2"
+lottieCompose = "6.7.1"
+animationGraphics = "1.11.0"
+googleMaterial = "1.13.0"
 agp = "9.2.1"
 animation = "2.8.4"
 coilCompose = "2.7.0"
@@ -27,6 +30,9 @@ androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 haze = { module = "dev.chrisbanes.haze:haze", version.ref = "haze" }
+lottie-compose = { module = "com.airbnb.android:lottie-compose", version.ref = "lottieCompose" }
+androidx-compose-animation-graphics = { group = "androidx.compose.animation", name = "animation-graphics", version.ref = "animationGraphics" }
+google-material = { group = "com.google.android.material", name = "material", version.ref = "googleMaterial" }
 androidx-animation = { module = "androidx.compose.animation:animation", version.ref = "animation" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreen" }

@@ -32,6 +32,11 @@ class ThemeViewModel(
     // Public read-only stream of theme configuration
     val themeConfiguration: StateFlow<ThemeConfiguration> = _themeConfiguration.asStateFlow()
 
+    // False until the saved theme has been read once. MainActivity keeps the splash screen up
+    // until then, so the app never draws with the placeholder (light) theme first.
+    private val _isLoaded = MutableStateFlow(false)
+    val isLoaded: StateFlow<Boolean> = _isLoaded.asStateFlow()
+
     // Derived stream specifically for the current font, helpful for UI logic
     val currentFont: StateFlow<AppFont> = _themeConfiguration
         .map { it.appFont }
@@ -46,6 +51,7 @@ class ThemeViewModel(
         viewModelScope.launch {
             repository.themeConfiguration.collect { config ->
                 _themeConfiguration.value = config
+                _isLoaded.value = true
             }
         }
     }

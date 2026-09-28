@@ -136,7 +136,7 @@ fun RecipeListScreen(
                     start = MaterialTheme.spacing.m,
                     end = MaterialTheme.spacing.m,
                     top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.s,
-                    bottom = navBarPadding.calculateBottomPadding() + MaterialTheme.spacing.s
+                    bottom = navBarPadding.calculateBottomPadding()
                 ),
                 horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.s),
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.s),

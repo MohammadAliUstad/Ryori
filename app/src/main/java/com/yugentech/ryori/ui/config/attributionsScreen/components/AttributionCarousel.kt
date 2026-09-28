@@ -23,7 +23,7 @@ import com.yugentech.ryori.theme.tokens.LocalDesignTokens
 
 @Composable
 fun AttributionCarousel() {
-    val pagerState = rememberPagerState(pageCount = { 2 })
+    val pagerState = rememberPagerState(pageCount = { PAGE_COUNT })
     val tokens = LocalDesignTokens.current
 
     Column(
@@ -36,8 +36,10 @@ fun AttributionCarousel() {
             pageSpacing = tokens.spacing.m
         ) { page ->
             when (page) {
-                0 -> DesignCreditCard()
-                1 -> LordiconCreditCard()
+                0 -> MealDbCreditCard()
+                1 -> CocktailDbCreditCard()
+                2 -> DesignCreditCard()
+                3 -> LordiconCreditCard()
             }
         }
 
@@ -47,7 +49,7 @@ fun AttributionCarousel() {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            repeat(2) { iteration ->
+            repeat(PAGE_COUNT) { iteration ->
                 val color = if (pagerState.currentPage == iteration) {
                     MaterialTheme.colorScheme.primary
                 } else {
@@ -64,3 +66,5 @@ fun AttributionCarousel() {
         }
     }
 }
+
+private const val PAGE_COUNT = 4

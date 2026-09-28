@@ -381,7 +381,7 @@ private fun SearchResults(
                 start = MaterialTheme.spacing.m,
                 end = MaterialTheme.spacing.m,
                 top = contentPadding.calculateTopPadding(),
-                bottom = contentPadding.calculateBottomPadding()
+                bottom = contentPadding.calculateBottomPadding() + MaterialTheme.spacing.s
             ),
             horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.s),
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.s),

@@ -1,13 +1,7 @@
 package com.yugentech.ryori.ui.main.homeScreen
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
@@ -26,8 +20,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -57,23 +51,20 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.yugentech.ryori.ui.main.mainScreen.components.ParallaxBackground
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
@@ -94,11 +85,14 @@ import com.yugentech.ryori.api.viewmodel.HomeViewModel
 import com.yugentech.ryori.theme.service.HapticService
 import com.yugentech.ryori.theme.tokens.corners
 import com.yugentech.ryori.theme.tokens.spacing
+import com.yugentech.ryori.ui.main.mainScreen.components.ParallaxBackground
 import com.yugentech.ryori.ui.main.mainScreen.components.RecipeCardRow
+import com.yugentech.ryori.ui.main.mainScreen.components.RecipeCardRowPlaceholder
+import com.yugentech.ryori.ui.main.mainScreen.components.rememberShimmerColor
 import com.yugentech.ryori.ui.main.mainScreen.components.rowItemShape
+import java.time.LocalTime
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
-import java.time.LocalTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -180,23 +174,21 @@ fun HomeScreen(
                 )
             }
 
+            // The real layout is on screen from the first frame, with placeholders standing in
+            // for anything still loading. Only a load that brings back nothing swaps to the
+            // error screen.
             AnimatedContent(
-                targetState = when {
-                    uiState.isLoading -> HomeMode.Loading
-                    uiState.featured.isEmpty() -> HomeMode.Error
-                    else -> HomeMode.Content
-                },
+                targetState = !uiState.isLoading && uiState.featured.isEmpty(),
                 transitionSpec = { fadeIn() togetherWith fadeOut() },
-                label = "HomeMode"
-            ) { mode ->
-                when (mode) {
-                    HomeMode.Loading -> HomeSkeleton(contentPadding = listPadding)
-                    HomeMode.Error -> ErrorContent(
+                label = "HomeError"
+            ) { showError ->
+                if (showError) {
+                    ErrorContent(
                         message = uiState.error ?: "Something went wrong",
                         onRetry = viewModel::load
                     )
-
-                    HomeMode.Content -> HomeContent(
+                } else {
+                    HomeContent(
                         uiState = uiState,
                         listState = listState,
                         contentPadding = listPadding,
@@ -212,8 +204,6 @@ fun HomeScreen(
     }
 }
 
-private enum class HomeMode { Loading, Error, Content }
-
 @Composable
 private fun HomeContent(
     uiState: HomeUiState,
@@ -227,7 +217,12 @@ private fun HomeContent(
 ) {
     val openSummary: (RecipeSummary) -> Unit = { onRecipeClick(it.type, it.id) }
     val rowPadding = PaddingValues(horizontal = MaterialTheme.spacing.m)
+    val loading = uiState.isLoading
+    val shimmer = rememberShimmerColor()
 
+    // While loading, every section shows its real header straight away and a placeholder the
+    // exact size of its content, so nothing moves when the data arrives. Home rows always
+    // reserve two title lines (titleLines = 2) to match their placeholders.
     LazyColumn(
         state = listState,
         contentPadding = contentPadding,
@@ -243,7 +238,10 @@ private fun HomeContent(
                     icon = Icons.Rounded.Star,
                     title = "Featured today",
                     action = {
-                        IconButton(onClick = onShuffleFeatured, enabled = !uiState.isRefreshingFeatured) {
+                        IconButton(
+                            onClick = onShuffleFeatured,
+                            enabled = !loading && !uiState.isRefreshingFeatured
+                        ) {
                             if (uiState.isRefreshingFeatured) {
                                 CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
                             } else {
@@ -252,14 +250,19 @@ private fun HomeContent(
                         }
                     }
                 )
-                FeaturedCarousel(
-                    recipes = uiState.featured,
-                    onClick = { onRecipeClick(it.type, it.id) },
-                    onCurrentImageChange = onFeaturedImageChange
-                )
+                if (loading) {
+                    FeaturedCarouselPlaceholder(shimmer = shimmer)
+                } else {
+                    FeaturedCarousel(
+                        recipes = uiState.featured,
+                        onClick = { onRecipeClick(it.type, it.id) },
+                        onCurrentImageChange = onFeaturedImageChange
+                    )
+                }
             }
         }
 
+        // Quick picks need no data, so they're usable while everything else loads.
         item(key = "quick_picks") {
             QuickPicks(
                 surpriseLoading = uiState.isSurpriseLoading,
@@ -273,50 +276,79 @@ private fun HomeContent(
             )
         }
 
-        uiState.cuisineSpotlight?.let { area ->
+        // The cuisine and category of the day are picked at random, so their names only
+        // arrive with the data; until then the headers show a general title.
+        if (loading || uiState.cuisineSpotlight != null) {
+            val area = uiState.cuisineSpotlight
             item(key = "cuisine_header") {
                 HomeSectionHeader(
                     icon = Icons.Rounded.Public,
-                    title = "Taste of ${CuisineFlags.flag(area)} $area",
-                    action = { SeeAllButton { onBrowse(RecipeFilter.AREA, area) } }
+                    title = if (area != null) "Taste of ${CuisineFlags.flag(area)} $area" else "Taste of the world",
+                    action = {
+                        SeeAllButton(enabled = area != null) {
+                            area?.let { onBrowse(RecipeFilter.AREA, it) }
+                        }
+                    }
                 )
             }
             item(key = "cuisine_row") {
-                RecipeCardRow(recipes = uiState.cuisineRecipes, onClick = openSummary, contentPadding = rowPadding)
+                if (loading) {
+                    RecipeCardRowPlaceholder(contentPadding = rowPadding, shimmer = shimmer)
+                } else {
+                    RecipeCardRow(recipes = uiState.cuisineRecipes, onClick = openSummary, contentPadding = rowPadding, titleLines = 2)
+                }
             }
         }
 
-        uiState.categorySpotlight?.let { category ->
+        if (loading || uiState.categorySpotlight != null) {
+            val category = uiState.categorySpotlight
             item(key = "category_header") {
                 HomeSectionHeader(
                     icon = Icons.Rounded.RestaurantMenu,
-                    title = "$category favourites",
-                    action = { SeeAllButton { onBrowse(RecipeFilter.CATEGORY, category) } }
+                    title = if (category != null) "$category favourites" else "Today's favourites",
+                    action = {
+                        SeeAllButton(enabled = category != null) {
+                            category?.let { onBrowse(RecipeFilter.CATEGORY, it) }
+                        }
+                    }
                 )
             }
             item(key = "category_row") {
-                RecipeCardRow(recipes = uiState.categoryRecipes, onClick = openSummary, contentPadding = rowPadding)
+                if (loading) {
+                    RecipeCardRowPlaceholder(contentPadding = rowPadding, shimmer = shimmer)
+                } else {
+                    RecipeCardRow(recipes = uiState.categoryRecipes, onClick = openSummary, contentPadding = rowPadding, titleLines = 2)
+                }
             }
         }
 
-        if (uiState.drinks.isNotEmpty()) {
+        if (loading || uiState.drinks.isNotEmpty()) {
             item(key = "drinks_header") {
                 HomeSectionHeader(
                     icon = Icons.Rounded.LocalCafe,
                     title = "Something to sip",
-                    action = { SeeAllButton { onBrowse(RecipeFilter.DRINKS, "all") } }
+                    action = { SeeAllButton(enabled = !loading) { onBrowse(RecipeFilter.DRINKS, "all") } }
                 )
             }
             item(key = "drinks_row") {
-                RecipeCardRow(recipes = uiState.drinks, onClick = openSummary, contentPadding = rowPadding)
+                if (loading) {
+                    RecipeCardRowPlaceholder(contentPadding = rowPadding, shimmer = shimmer)
+                } else {
+                    RecipeCardRow(recipes = uiState.drinks, onClick = openSummary, contentPadding = rowPadding, titleLines = 2)
+                }
             }
         }
 
-        if (uiState.categories.isNotEmpty()) {
+        if (loading || uiState.categories.isNotEmpty()) {
             item(key = "categories_header") {
                 HomeSectionHeader(icon = Icons.Rounded.Category, title = "Browse by category")
             }
-            val rows = uiState.categories.chunked(3)
+            // Same 3-wide rows either way; while loading, placeholder tiles fill them.
+            val rows: List<List<Category?>> = if (loading) {
+                List(CATEGORY_PLACEHOLDER_ROWS) { List(3) { null } }
+            } else {
+                uiState.categories.chunked(3)
+            }
             rows.forEachIndexed { rowIndex, row ->
                 item(key = "category_grid_$rowIndex") {
                     Row(
@@ -327,11 +359,15 @@ private fun HomeContent(
                             .padding(bottom = if (rowIndex < rows.lastIndex) MaterialTheme.spacing.s else 0.dp)
                     ) {
                         row.forEach { category ->
-                            CategoryTile(
-                                category = category,
-                                onClick = { category.name?.let { onBrowse(RecipeFilter.CATEGORY, it) } },
-                                modifier = Modifier.weight(1f)
-                            )
+                            if (category == null) {
+                                CategoryTilePlaceholder(shimmer = shimmer, modifier = Modifier.weight(1f))
+                            } else {
+                                CategoryTile(
+                                    category = category,
+                                    onClick = { category.name?.let { onBrowse(RecipeFilter.CATEGORY, it) } },
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
                         }
                         // Keep tiles the same width on a short last row.
                         repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
@@ -341,6 +377,9 @@ private fun HomeContent(
         }
     }
 }
+
+// Rows of placeholder category tiles shown while loading.
+private const val CATEGORY_PLACEHOLDER_ROWS = 3
 
 // --- Greeting & headers -----------------------------------------------------------------------
 
@@ -415,8 +454,9 @@ private fun HomeSectionHeader(
 }
 
 @Composable
-private fun SeeAllButton(onClick: () -> Unit) {
-    TextButton(onClick = onClick) { Text("See all") }
+private fun SeeAllButton(enabled: Boolean = true, onClick: () -> Unit) {
+    // Shown (disabled) while loading so the header keeps the same height.
+    TextButton(onClick = onClick, enabled = enabled) { Text("See all") }
 }
 
 // --- Featured carousel ------------------------------------------------------------------------
@@ -682,38 +722,73 @@ private fun CategoryTile(category: Category, onClick: () -> Unit, modifier: Modi
 
 // --- Loading & error --------------------------------------------------------------------------
 
+// Same size as FeaturedCarousel: a card the width of one pager page (screen minus the pager's
+// side padding) at the card's 0.9 aspect ratio, then the page dots underneath.
 @Composable
-private fun HomeSkeleton(contentPadding: PaddingValues) {
-    val transition = rememberInfiniteTransition(label = "shimmer")
-    val alpha by transition.animateFloat(
-        initialValue = 0.35f,
-        targetValue = 0.8f,
-        animationSpec = infiniteRepeatable(tween(900, easing = LinearEasing), RepeatMode.Reverse),
-        label = "shimmerAlpha"
-    )
-    val block: @Composable (Modifier) -> Unit = { modifier ->
+private fun FeaturedCarouselPlaceholder(shimmer: Color) {
+    Column {
         Box(
-            modifier = modifier
-                .clip(RoundedCornerShape(MaterialTheme.corners.large))
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = alpha))
+            modifier = Modifier
+                .padding(horizontal = MaterialTheme.spacing.m)
+                .fillMaxWidth()
+                .aspectRatio(0.9f)
+                .clip(RoundedCornerShape(MaterialTheme.corners.extraLarge))
+                .background(shimmer)
         )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = MaterialTheme.spacing.s)
+        ) {
+            repeat(FEATURED_PLACEHOLDER_DOTS) { index ->
+                Box(
+                    modifier = Modifier
+                        .height(6.dp)
+                        .width(if (index == 0) 20.dp else 6.dp)
+                        .clip(CircleShape)
+                        .background(shimmer)
+                )
+            }
+        }
     }
+}
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(top = contentPadding.calculateTopPadding())
-            .padding(horizontal = MaterialTheme.spacing.m)
+// The featured carousel shows 5 recipes (HomeViewModel's getRandomMeals(count = 5)).
+private const val FEATURED_PLACEHOLDER_DOTS = 5
+
+// Same layout as CategoryTile: the card, its padding, the 1.3 image and one line of label.
+@Composable
+private fun CategoryTilePlaceholder(shimmer: Color, modifier: Modifier = Modifier) {
+    Card(
+        shape = RoundedCornerShape(MaterialTheme.corners.large),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+        modifier = modifier
     ) {
-        Spacer(Modifier.height(MaterialTheme.spacing.s))
-        block(Modifier.width(140.dp).height(18.dp))
-        Spacer(Modifier.height(MaterialTheme.spacing.s))
-        block(Modifier.fillMaxWidth(0.8f).height(30.dp))
-        Spacer(Modifier.height(MaterialTheme.spacing.l))
-        block(Modifier.fillMaxWidth().aspectRatio(0.9f))
-        Spacer(Modifier.height(MaterialTheme.spacing.l))
-        Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-            repeat(3) { block(Modifier.weight(1f).height(84.dp)) }
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(MaterialTheme.spacing.s)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1.3f)
+                    .clip(RoundedCornerShape(MaterialTheme.corners.medium))
+                    .background(shimmer)
+            )
+            // An empty Text in the label's style takes exactly one label line of height.
+            Text(
+                text = "",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier
+                    .padding(top = MaterialTheme.spacing.xs)
+                    .fillMaxWidth(0.6f)
+                    .clip(RoundedCornerShape(MaterialTheme.corners.small))
+                    .background(shimmer)
+            )
         }
     }
 }

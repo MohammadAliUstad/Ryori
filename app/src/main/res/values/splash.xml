@@ -4,14 +4,19 @@
     <!--
         Animated burger splash (avd_splash_burger): the buns drop in, the patty and lettuce fade
         in, the seeds pop and the shadow grows. The whole build-up runs ~1.12s.
-        Background is the burger artwork's cream, with a warm dark tone in dark mode
-        (values-night/colors.xml).
+        Background is the app icon's background (ic_launcher_background) in light and dark
+        mode alike, so the splash matches the launcher icon it grows out of.
     -->
     <style name="Theme.Ryori.SplashScreen" parent="Theme.SplashScreen">
         <item name="android:windowActionBar">false</item>
         <item name="android:windowNoTitle">true</item>
-        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenBackground">@color/ic_launcher_background</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/avd_splash_burger</item>
         <item name="windowSplashScreenAnimationDuration">1200</item>
+
+        <!-- Like Quill: the window behind the splash uses the same colour, and once the splash
+             is gone the activity switches to the DayNight app theme. -->
+        <item name="android:windowBackground">@color/ic_launcher_background</item>
+        <item name="postSplashScreenTheme">@style/Theme.Ryori</item>
     </style>
 </resources>

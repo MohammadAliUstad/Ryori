@@ -15,6 +15,15 @@ sealed class AppScreen(val route: String) {
     data object About       : AppScreen("about")
     data object Appearance  : AppScreen("appearance")
     data object Configure   : AppScreen("configure")
+    data object WhatsNew    : AppScreen("whats_new")
+    data object Attributions : AppScreen("attributions")
+    data object MoreApps    : AppScreen("more_apps")
+    data object RecentlyViewed : AppScreen("recently_viewed")
+
+    companion object {
+        // Set on Main's back stack entry to switch tabs when returning to it.
+        const val REQUESTED_TAB = "requested_tab"
+    }
 
     // A meal or drink, looked up by id.
     data object Recipe : AppScreen("recipe/{type}/{id}") {

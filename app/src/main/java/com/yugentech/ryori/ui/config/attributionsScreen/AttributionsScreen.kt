@@ -27,6 +27,7 @@ import com.yugentech.ryori.theme.tokens.spacing
 import com.yugentech.ryori.ui.main.mainScreen.components.SectionHeader
 import com.yugentech.ryori.ui.config.aboutScreen.model.license.LicensesContent
 import com.yugentech.ryori.ui.main.mainScreen.components.itemShape
+import com.yugentech.ryori.utils.AppConstants
 import com.yugentech.ryori.ui.config.attributionsScreen.components.AttributionCarousel
 import com.yugentech.ryori.ui.config.attributionsScreen.components.AttributionsTopBar
 import com.yugentech.ryori.ui.config.attributionsScreen.components.LibraryItem
@@ -60,13 +61,13 @@ fun AttributionsScreen(
                 .padding(top = scaffoldPadding.calculateTopPadding()),
             contentPadding = PaddingValues(
                 top = tokens.spacing.m,
-                bottom = navBarPadding.calculateBottomPadding() + MaterialTheme.spacing.s,
+                bottom = navBarPadding.calculateBottomPadding(),
                 start = tokens.spacing.m + scaffoldPadding.calculateStartPadding(layoutDirection),
                 end = tokens.spacing.m + scaffoldPadding.calculateEndPadding(layoutDirection)
             ),
             verticalArrangement = Arrangement.spacedBy(tokens.spacing.xxs)
         ) {
-            item { OpenSourceCard(githubUrl = "https://github.com/YugenTech/Ryori") }
+            item { OpenSourceCard(githubUrl = AppConstants.GITHUB_URL) }
 
             item { AttributionCarousel() }
 

@@ -1,5 +1,6 @@
 package com.yugentech.ryori.ui.config.aboutScreen.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -24,8 +25,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import com.yugentech.ryori.R
 import com.yugentech.ryori.theme.tokens.components
 import com.yugentech.ryori.theme.tokens.corners
 import com.yugentech.ryori.theme.tokens.spacing
@@ -71,6 +76,9 @@ fun AppInfoCard() {
             Box(
                 modifier = Modifier
                     .size(MaterialTheme.components.imageSizeMedium)
+                    // The icon on its launcher background, same tile as on the More from us screen.
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(colorResource(R.color.ic_launcher_background))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null
@@ -79,7 +87,7 @@ fun AppInfoCard() {
             ) {
                 AnimatedRyoriIcon(
                     isAnimating = isAnimating,
-                    modifier = Modifier.requiredSize(MaterialTheme.components.imageSizeLarge * 0.55f)
+                    modifier = Modifier.requiredSize(64.dp)
                 )
             }
 
@@ -95,7 +103,7 @@ fun AppInfoCard() {
             Spacer(modifier = Modifier.height(MaterialTheme.spacing.xs))
 
             Text(
-                text = "Version 1.0",
+                text = "Version 1.0.0",
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -103,7 +111,7 @@ fun AppInfoCard() {
             Spacer(modifier = Modifier.height(MaterialTheme.spacing.m))
 
             Text(
-                text = "Discover and save your favorite recipes from around the world.",
+                text = "Ryori makes every meal feel like an adventure. Discover dishes from around the world, cook along step by step, and pour a mocktail while you're at it.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,

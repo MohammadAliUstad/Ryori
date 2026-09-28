@@ -29,34 +29,35 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.core.net.toUri
-import com.yugentech.ryori.theme.tokens.LocalDesignTokens
+import com.yugentech.ryori.theme.tokens.components
+import com.yugentech.ryori.theme.tokens.corners
+import com.yugentech.ryori.theme.tokens.spacing
 
 @Composable
 fun LordiconCreditCard() {
     val context = LocalContext.current
-    val tokens = LocalDesignTokens.current
     val lordiconUrl = "https://lordicon.com/"
 
     Card(
-        shape = RoundedCornerShape(tokens.corners.extraLarge),
+        shape = RoundedCornerShape(MaterialTheme.corners.extraLarge),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.secondaryContainer
         ),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = tokens.spacing.s)
+            .padding(top = MaterialTheme.spacing.s)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(tokens.spacing.l),
-            verticalArrangement = Arrangement.spacedBy(tokens.spacing.m)
+                .padding(MaterialTheme.spacing.l),
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.m)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.size(tokens.components.imageSizeSmall)
+                    modifier = Modifier.size(MaterialTheme.components.imageSizeSmall)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
@@ -67,7 +68,7 @@ fun LordiconCreditCard() {
                     }
                 }
 
-                Spacer(Modifier.width(tokens.spacing.m))
+                Spacer(modifier = Modifier.width(MaterialTheme.spacing.m))
 
                 Column {
                     Text(
@@ -85,7 +86,7 @@ fun LordiconCreditCard() {
             }
 
             Text(
-                "The lively animated icons used in the navigation bar are provided by Lordicon. They offer a massive library of high-quality animated assets for all creators.",
+                "The animated Home and Search icons in Ryori's navigation bar are provided by Lordicon, a library of high-quality animated assets for creators.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f),
                 minLines = 4,
@@ -98,7 +99,7 @@ fun LordiconCreditCard() {
                     context.startActivity(intent)
                 },
                 modifier = Modifier.align(Alignment.End),
-                shape = RoundedCornerShape(tokens.corners.medium),
+                shape = RoundedCornerShape(MaterialTheme.corners.medium),
                 colors = ButtonDefaults.filledTonalButtonColors(
                     containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
                     contentColor = MaterialTheme.colorScheme.onSurface
