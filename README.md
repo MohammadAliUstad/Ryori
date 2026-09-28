@@ -37,15 +37,15 @@ Welcome to **Ryori**, a sleek and simple food application designed to make explo
 
 <div align="center">
   
-<img src="Screenshots/IMG_0328.JPG" width="30%"/>
-<img src="Screenshots/IMG_0329.JPG" width="30%"/>
-<img src="Screenshots/IMG_0348.JPG" width="30%"/>
+<img src="Screenshots/1.png" width="30%"/>
+<img src="Screenshots/2.png" width="30%"/>
+<img src="Screenshots/3.png" width="30%"/>
 
 <br/><br/>
 
-<img src="Screenshots/IMG_0349.JPG" width="30%"/>
-<img src="Screenshots/IMG_0350.JPG" width="30%"/>
-<img src="Screenshots/IMG_0351.JPG" width="30%"/>
+<img src="Screenshots/4.png" width="30%"/>
+<img src="Screenshots/5.png" width="30%"/>
+<img src="Screenshots/6.png" width="30%"/>
 
 </div>
 
