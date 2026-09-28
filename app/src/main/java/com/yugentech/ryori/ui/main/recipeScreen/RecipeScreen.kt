@@ -87,6 +87,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.yugentech.ryori.api.model.domain.CuisineFlags
 import com.yugentech.ryori.api.model.domain.DrinkCategories
+import com.yugentech.ryori.api.error.AppError
 import com.yugentech.ryori.api.model.domain.Recipe
 import com.yugentech.ryori.api.model.domain.RecipeFilter
 import com.yugentech.ryori.api.model.domain.RecipeIngredient
@@ -97,6 +98,7 @@ import com.yugentech.ryori.api.viewmodel.RecipeViewModel
 import com.yugentech.ryori.theme.service.HapticService
 import com.yugentech.ryori.theme.tokens.corners
 import com.yugentech.ryori.theme.tokens.spacing
+import com.yugentech.ryori.ui.main.mainScreen.components.ErrorState
 import com.yugentech.ryori.ui.main.mainScreen.components.RecipeCardRow
 import com.yugentech.ryori.ui.main.mainScreen.components.SectionHeader
 import com.yugentech.ryori.ui.main.mainScreen.components.itemShape
@@ -161,7 +163,7 @@ fun RecipeScreen(
             }
 
             recipe == null -> ErrorState(
-                message = uiState.error ?: "Couldn't load this recipe",
+                error = uiState.error ?: AppError.UNKNOWN,
                 onRetry = { viewModel.load(type, id, force = true) }
             )
 
@@ -594,31 +596,6 @@ private fun StepRow(number: Int, text: String, shape: Shape, modifier: Modifier 
                     .padding(top = if (isSingleLine) 0.dp else 4.dp)
             )
         }
-    }
-}
-
-@Composable
-private fun ErrorState(message: String, onRetry: () -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(MaterialTheme.spacing.xl)
-    ) {
-        Text(
-            text = "Couldn't load this recipe",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(Modifier.height(MaterialTheme.spacing.xs))
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(Modifier.height(MaterialTheme.spacing.m))
-        Button(onClick = onRetry) { Text("Try again") }
     }
 }
 

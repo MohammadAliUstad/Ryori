@@ -1,7 +1,10 @@
 package com.yugentech.ryori.ui.main.homeScreen
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
@@ -36,7 +39,6 @@ import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.RestaurantMenu
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material.icons.rounded.Star
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -68,12 +70,18 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import coil.imageLoader
+import coil.request.ImageRequest
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.withTimeoutOrNull
+import com.yugentech.ryori.api.error.AppError
 import com.yugentech.ryori.api.model.domain.Category
 import com.yugentech.ryori.api.model.domain.CuisineFlags
 import com.yugentech.ryori.api.model.domain.Recipe
@@ -85,9 +93,11 @@ import com.yugentech.ryori.api.viewmodel.HomeViewModel
 import com.yugentech.ryori.theme.service.HapticService
 import com.yugentech.ryori.theme.tokens.corners
 import com.yugentech.ryori.theme.tokens.spacing
+import com.yugentech.ryori.ui.main.mainScreen.components.ErrorState
 import com.yugentech.ryori.ui.main.mainScreen.components.ParallaxBackground
 import com.yugentech.ryori.ui.main.mainScreen.components.RecipeCardRow
 import com.yugentech.ryori.ui.main.mainScreen.components.RecipeCardRowPlaceholder
+import com.yugentech.ryori.ui.main.mainScreen.components.ToastMessage
 import com.yugentech.ryori.ui.main.mainScreen.components.rememberShimmerColor
 import com.yugentech.ryori.ui.main.mainScreen.components.rowItemShape
 import java.time.LocalTime
@@ -166,7 +176,11 @@ fun HomeScreen(
 
         Box(modifier = Modifier.fillMaxSize()) {
             // Drawn from the very top (under the transparent bar) so the photo shows behind it.
-            if (!uiState.isLoading && parallaxImage != null) {
+            AnimatedVisibility(
+                visible = !uiState.isLoading && parallaxImage != null,
+                enter = fadeIn(tween(HOME_REVEAL_MILLIS)),
+                exit = fadeOut(tween(HOME_REVEAL_MILLIS))
+            ) {
                 ParallaxBackground(
                     imageUrl = parallaxImage,
                     scrollOffset = parallaxScrollOffset,
@@ -178,13 +192,19 @@ fun HomeScreen(
             // for anything still loading. Only a load that brings back nothing swaps to the
             // error screen.
             AnimatedContent(
-                targetState = !uiState.isLoading && uiState.featured.isEmpty(),
+                // The target carries the error itself, so the error screen keeps its message while
+                // it fades out after "Try again" (the view model clears the error straight away).
+                targetState = if (!uiState.isLoading && uiState.featured.isEmpty()) {
+                    uiState.error ?: AppError.UNKNOWN
+                } else {
+                    null
+                },
                 transitionSpec = { fadeIn() togetherWith fadeOut() },
                 label = "HomeError"
-            ) { showError ->
-                if (showError) {
-                    ErrorContent(
-                        message = uiState.error ?: "Something went wrong",
+            ) { shownError ->
+                if (shownError != null) {
+                    ErrorState(
+                        error = shownError,
                         onRetry = viewModel::load
                     )
                 } else {
@@ -200,6 +220,16 @@ fun HomeScreen(
                     )
                 }
             }
+
+            // Problems that don't take over the screen: a failed shuffle or surprise, or rows
+            // that couldn't load.
+            ToastMessage(
+                message = uiState.notice?.short,
+                onDismiss = viewModel::dismissNotice,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.s)
+            )
         }
     }
 }
@@ -221,8 +251,8 @@ private fun HomeContent(
     val shimmer = rememberShimmerColor()
 
     // While loading, every section shows its real header straight away and a placeholder the
-    // exact size of its content, so nothing moves when the data arrives. Home rows always
-    // reserve two title lines (titleLines = 2) to match their placeholders.
+    // exact size of its content, so nothing moves when the data arrives. Each placeholder
+    // crossfades into its content rather than snapping.
     LazyColumn(
         state = listState,
         contentPadding = contentPadding,
@@ -250,14 +280,16 @@ private fun HomeContent(
                         }
                     }
                 )
-                if (loading) {
-                    FeaturedCarouselPlaceholder(shimmer = shimmer)
-                } else {
-                    FeaturedCarousel(
-                        recipes = uiState.featured,
-                        onClick = { onRecipeClick(it.type, it.id) },
-                        onCurrentImageChange = onFeaturedImageChange
-                    )
+                LoadingCrossfade(loading = loading, label = "featured") { showPlaceholder ->
+                    if (showPlaceholder) {
+                        FeaturedCarouselPlaceholder(shimmer = shimmer)
+                    } else {
+                        FeaturedCarousel(
+                            recipes = uiState.featured,
+                            onClick = { onRecipeClick(it.type, it.id) },
+                            onCurrentImageChange = onFeaturedImageChange
+                        )
+                    }
                 }
             }
         }
@@ -292,10 +324,12 @@ private fun HomeContent(
                 )
             }
             item(key = "cuisine_row") {
-                if (loading) {
-                    RecipeCardRowPlaceholder(contentPadding = rowPadding, shimmer = shimmer)
-                } else {
-                    RecipeCardRow(recipes = uiState.cuisineRecipes, onClick = openSummary, contentPadding = rowPadding, titleLines = 2)
+                LoadingCrossfade(loading = loading, label = "cuisine_row") { showPlaceholder ->
+                    if (showPlaceholder) {
+                        RecipeCardRowPlaceholder(contentPadding = rowPadding, shimmer = shimmer)
+                    } else {
+                        RecipeCardRow(recipes = uiState.cuisineRecipes, onClick = openSummary, contentPadding = rowPadding)
+                    }
                 }
             }
         }
@@ -314,10 +348,12 @@ private fun HomeContent(
                 )
             }
             item(key = "category_row") {
-                if (loading) {
-                    RecipeCardRowPlaceholder(contentPadding = rowPadding, shimmer = shimmer)
-                } else {
-                    RecipeCardRow(recipes = uiState.categoryRecipes, onClick = openSummary, contentPadding = rowPadding, titleLines = 2)
+                LoadingCrossfade(loading = loading, label = "category_row") { showPlaceholder ->
+                    if (showPlaceholder) {
+                        RecipeCardRowPlaceholder(contentPadding = rowPadding, shimmer = shimmer)
+                    } else {
+                        RecipeCardRow(recipes = uiState.categoryRecipes, onClick = openSummary, contentPadding = rowPadding)
+                    }
                 }
             }
         }
@@ -331,10 +367,12 @@ private fun HomeContent(
                 )
             }
             item(key = "drinks_row") {
-                if (loading) {
-                    RecipeCardRowPlaceholder(contentPadding = rowPadding, shimmer = shimmer)
-                } else {
-                    RecipeCardRow(recipes = uiState.drinks, onClick = openSummary, contentPadding = rowPadding, titleLines = 2)
+                LoadingCrossfade(loading = loading, label = "drinks_row") { showPlaceholder ->
+                    if (showPlaceholder) {
+                        RecipeCardRowPlaceholder(contentPadding = rowPadding, shimmer = shimmer)
+                    } else {
+                        RecipeCardRow(recipes = uiState.drinks, onClick = openSummary, contentPadding = rowPadding)
+                    }
                 }
             }
         }
@@ -354,19 +392,31 @@ private fun HomeContent(
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.s),
                         modifier = Modifier
+                            // Rows beyond the placeholder ones fade in instead of popping.
+                            .animateItem(
+                                fadeInSpec = tween(HOME_REVEAL_MILLIS),
+                                placementSpec = null,
+                                fadeOutSpec = tween(HOME_REVEAL_MILLIS)
+                            )
                             .fillMaxWidth()
                             .padding(horizontal = MaterialTheme.spacing.m)
                             .padding(bottom = if (rowIndex < rows.lastIndex) MaterialTheme.spacing.s else 0.dp)
                     ) {
                         row.forEach { category ->
-                            if (category == null) {
-                                CategoryTilePlaceholder(shimmer = shimmer, modifier = Modifier.weight(1f))
-                            } else {
-                                CategoryTile(
-                                    category = category,
-                                    onClick = { category.name?.let { onBrowse(RecipeFilter.CATEGORY, it) } },
-                                    modifier = Modifier.weight(1f)
-                                )
+                            Crossfade(
+                                targetState = category,
+                                animationSpec = tween(HOME_REVEAL_MILLIS),
+                                label = "category_tile",
+                                modifier = Modifier.weight(1f)
+                            ) { tile ->
+                                if (tile == null) {
+                                    CategoryTilePlaceholder(shimmer = shimmer)
+                                } else {
+                                    CategoryTile(
+                                        category = tile,
+                                        onClick = { tile.name?.let { onBrowse(RecipeFilter.CATEGORY, it) } }
+                                    )
+                                }
                             }
                         }
                         // Keep tiles the same width on a short last row.
@@ -380,6 +430,24 @@ private fun HomeContent(
 
 // Rows of placeholder category tiles shown while loading.
 private const val CATEGORY_PLACEHOLDER_ROWS = 3
+
+// How long a skeleton takes to fade into its loaded content.
+private const val HOME_REVEAL_MILLIS = 400
+
+// Fades a section from its placeholder (content(true)) to its loaded content (content(false)).
+// Both are the same size, so the crossfade never moves anything around it.
+@Composable
+private fun LoadingCrossfade(
+    loading: Boolean,
+    label: String,
+    content: @Composable (showPlaceholder: Boolean) -> Unit
+) {
+    Crossfade(
+        targetState = loading,
+        animationSpec = tween(HOME_REVEAL_MILLIS),
+        label = label
+    ) { showPlaceholder -> content(showPlaceholder) }
+}
 
 // --- Greeting & headers -----------------------------------------------------------------------
 
@@ -440,15 +508,22 @@ private fun HomeSectionHeader(
             modifier = Modifier.size(20.dp)
         )
         Spacer(Modifier.width(MaterialTheme.spacing.sm))
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+        // Fades when a loading title ("Taste of the world") becomes the real one.
+        AnimatedContent(
+            targetState = title,
+            transitionSpec = { fadeIn(tween(HOME_REVEAL_MILLIS)) togetherWith fadeOut(tween(HOME_REVEAL_MILLIS)) },
+            label = "HomeSectionTitle",
             modifier = Modifier.weight(1f)
-        )
+        ) { text ->
+            Text(
+                text = text,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
         action?.invoke()
     }
 }
@@ -463,6 +538,41 @@ private fun SeeAllButton(enabled: Boolean = true, onClick: () -> Unit) {
 
 @Composable
 private fun FeaturedCarousel(
+    recipes: List<Recipe>,
+    onClick: (Recipe) -> Unit,
+    onCurrentImageChange: (String?) -> Unit
+) {
+    val context = LocalContext.current
+    // The set on screen. A shuffle's new set only replaces it once its first photos are
+    // downloaded, then crossfades in, so the old cards fade out instead of snapping to empty
+    // cards that fill in one by one.
+    var shown by remember { mutableStateOf(recipes) }
+    LaunchedEffect(recipes) {
+        if (recipes == shown) return@LaunchedEffect
+        // Only the first two pages are visible at once. Capped so a slow connection still
+        // swaps (the photos then fade in as they arrive).
+        withTimeoutOrNull(FEATURED_PRELOAD_TIMEOUT_MILLIS) {
+            recipes.take(2).map { recipe ->
+                async { context.imageLoader.execute(ImageRequest.Builder(context).data(recipe.image).build()) }
+            }.awaitAll()
+        }
+        shown = recipes
+    }
+
+    Crossfade(
+        targetState = shown,
+        animationSpec = tween(HOME_REVEAL_MILLIS),
+        label = "featured_shuffle"
+    ) { set ->
+        FeaturedPager(recipes = set, onClick = onClick, onCurrentImageChange = onCurrentImageChange)
+    }
+}
+
+// How long a shuffle waits for the new photos before swapping anyway.
+private const val FEATURED_PRELOAD_TIMEOUT_MILLIS = 3_000L
+
+@Composable
+private fun FeaturedPager(
     recipes: List<Recipe>,
     onClick: (Recipe) -> Unit,
     onCurrentImageChange: (String?) -> Unit
@@ -790,31 +900,5 @@ private fun CategoryTilePlaceholder(shimmer: Color, modifier: Modifier = Modifie
                     .background(shimmer)
             )
         }
-    }
-}
-
-@Composable
-private fun ErrorContent(message: String, onRetry: () -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(MaterialTheme.spacing.xl)
-    ) {
-        Text(
-            text = "Couldn't load recipes",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(Modifier.height(MaterialTheme.spacing.xs))
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
-        Spacer(Modifier.height(MaterialTheme.spacing.m))
-        Button(onClick = onRetry) { Text("Try again") }
     }
 }

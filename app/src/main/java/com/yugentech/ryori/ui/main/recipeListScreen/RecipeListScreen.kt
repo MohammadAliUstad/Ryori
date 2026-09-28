@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -42,6 +41,7 @@ import com.yugentech.ryori.api.model.domain.RecipeType
 import com.yugentech.ryori.api.model.domain.titleFor
 import com.yugentech.ryori.api.viewmodel.RecipeListViewModel
 import com.yugentech.ryori.theme.tokens.spacing
+import com.yugentech.ryori.ui.main.mainScreen.components.ErrorState
 import com.yugentech.ryori.ui.main.mainScreen.components.RecipeCard
 import org.koin.androidx.compose.koinViewModel
 
@@ -69,13 +69,13 @@ fun RecipeListScreen(
                 title = {
                     Column {
                         Text(text = filter.titleFor(value), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        if (!uiState.isLoading && uiState.error == null) {
-                            Text(
-                                text = "${uiState.recipes.size} recipes",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                        // Always laid out (empty while loading) so the title doesn't jump up when
+                        // the count arrives.
+                        Text(
+                            text = if (!uiState.isLoading && uiState.error == null) "${uiState.recipes.size} recipes" else "",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 },
                 navigationIcon = {
@@ -94,6 +94,7 @@ fun RecipeListScreen(
         },
         containerColor = MaterialTheme.colorScheme.surface
     ) { innerPadding ->
+        val error = uiState.error
         when {
             uiState.isLoading -> Box(
                 modifier = Modifier
@@ -104,7 +105,13 @@ fun RecipeListScreen(
                 CircularProgressIndicator()
             }
 
-            uiState.error != null || uiState.recipes.isEmpty() -> Column(
+            error != null -> ErrorState(
+                error = error,
+                onRetry = { viewModel.load(filter, value, force = true) },
+                modifier = Modifier.padding(innerPadding)
+            )
+
+            uiState.recipes.isEmpty() -> Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
                 modifier = Modifier
@@ -113,21 +120,17 @@ fun RecipeListScreen(
                     .padding(MaterialTheme.spacing.xl)
             ) {
                 Text(
-                    text = if (uiState.error != null) "Couldn't load recipes" else "Nothing here yet",
+                    text = "Nothing here yet",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(Modifier.height(MaterialTheme.spacing.xs))
                 Text(
-                    text = uiState.error ?: "No recipes match this yet. Try another one.",
+                    text = "No recipes match this yet. Try another one.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
                 )
-                if (uiState.error != null) {
-                    Spacer(Modifier.height(MaterialTheme.spacing.m))
-                    Button(onClick = { viewModel.load(filter, value, force = true) }) { Text("Try again") }
-                }
             }
 
             else -> LazyVerticalGrid(

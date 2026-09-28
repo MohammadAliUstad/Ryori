@@ -1,5 +1,6 @@
 package com.yugentech.ryori.api.repository
 
+import com.yugentech.ryori.api.error.NotFoundException
 import com.yugentech.ryori.api.model.domain.Area
 import com.yugentech.ryori.api.model.domain.Category
 import com.yugentech.ryori.api.model.domain.IngredientInfo
@@ -75,11 +76,12 @@ class RecipeRepositoryImpl(
         nonAlcoholicDrinks()
     }
 
+    // Meals and drinks are searched separately; if one side fails the other's results still
+    // show. Only when both fail is it an error (so "offline" isn't shown as "no results").
     override suspend fun search(query: String): Result<List<RecipeSummary>> = runCatching {
         coroutineScope {
             val meals = async {
                 runCatching { foodService.searchMeals(query).meals.orEmpty().mapNotNull { it?.toSummary() } }
-                    .getOrDefault(emptyList())
             }
             val drinks = async {
                 runCatching {
@@ -87,9 +89,12 @@ class RecipeRepositoryImpl(
                         .filterNotNull()
                         .filter { it.isNonAlcoholic() }
                         .mapNotNull { it.toSummary() }
-                }.getOrDefault(emptyList())
+                }
             }
-            meals.await().withoutMeat() + drinks.await()
+            val mealsResult = meals.await()
+            val drinksResult = drinks.await()
+            if (mealsResult.isFailure && drinksResult.isFailure) throw mealsResult.exceptionOrNull()!!
+            mealsResult.getOrDefault(emptyList()).withoutMeat() + drinksResult.getOrDefault(emptyList())
         }
     }
 
@@ -97,42 +102,50 @@ class RecipeRepositoryImpl(
         when (type) {
             RecipeType.MEAL -> foodService.getMealById(id).meals?.firstOrNull()?.toRecipe()
             RecipeType.DRINK -> drinkService.getDrinkById(id).drinks?.firstOrNull()?.toRecipe()
-        } ?: error("Recipe not found")
+        } ?: throw NotFoundException("Recipe $type/$id not found")
     }
 
     override suspend fun getRandomRecipeId(type: RecipeType): Result<String> = runCatching {
         when (type) {
             RecipeType.MEAL -> if (isVegetarian()) {
                 // Pick from the vegetarian-friendly categories rather than rerolling random.php.
+                // If every category failed, report why (e.g. offline) rather than "not found".
+                var failure: Throwable? = null
                 VEGETARIAN_CATEGORIES.shuffled().firstNotNullOfOrNull { category ->
                     runCatching { foodService.getMealsByCategory(category).meals.orEmpty() }
+                        .onFailure { failure = it }
                         .getOrDefault(emptyList())
                         .mapNotNull { it?.idMeal }
                         .randomOrNull()
-                }
+                } ?: failure?.let { throw it }
             } else {
                 foodService.getRandomMeal().meals?.firstOrNull()?.idMeal
             }
             // random.php can return alcoholic drinks, so pick from the non-alcoholic list.
             RecipeType.DRINK -> nonAlcoholicDrinks().randomOrNull()?.id
-        } ?: error("Nothing found")
+        } ?: throw NotFoundException("No random $type found")
     }
 
     // TheMealDB's random.php returns one meal per call, so fire them in parallel and drop
-    // duplicates. Individual failures are skipped; it only fails if nothing came back.
+    // duplicates. Individual failures are skipped; it only fails if nothing came back, and then
+    // with the first failure's cause so the user sees why (offline, timeout...).
     // In vegetarian mode more are fetched than needed, since meat dishes get dropped.
     override suspend fun getRandomMeals(count: Int): Result<List<Recipe>> = runCatching {
         val vegetarian = isVegetarian()
         val attempts = if (vegetarian) count * 3 else count
-        val meals = coroutineScope {
+        val results = coroutineScope {
             List(attempts) {
-                async { runCatching { foodService.getRandomMeal().meals?.firstOrNull()?.toRecipe() }.getOrNull() }
-            }.mapNotNull { it.await() }
+                async { runCatching { foodService.getRandomMeal().meals?.firstOrNull()?.toRecipe() } }
+            }.map { it.await() }
         }
+        val meals = results.mapNotNull { it.getOrNull() }
             .distinctBy { it.id }
             .filterNot { vegetarian && it.category.isMeatCategory() }
             .take(count)
-        meals.ifEmpty { error("Couldn't load recipes") }
+        meals.ifEmpty {
+            throw results.firstNotNullOfOrNull { it.exceptionOrNull() }
+                ?: NotFoundException("No random meals found")
+        }
     }
 
     override suspend fun getRecipes(filter: RecipeFilter, value: String): Result<List<RecipeSummary>> =

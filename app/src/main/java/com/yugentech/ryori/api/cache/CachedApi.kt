@@ -1,5 +1,6 @@
 package com.yugentech.ryori.api.cache
 
+import com.yugentech.ryori.api.error.HttpStatusException
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
@@ -79,7 +80,7 @@ class CachedApi(
         val response = client.get(url) {
             params.forEach { (name, value) -> parameter(name, value) }
         }
-        check(response.status.isSuccess()) { "HTTP ${response.status.value} for $url" }
+        if (!response.status.isSuccess()) throw HttpStatusException(response.status.value, url)
         return response.bodyAsText()
     }
 

@@ -13,7 +13,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
@@ -53,6 +56,8 @@ fun ParallaxBackground(
                 model = url,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
+                // Darkens the photo a little so bright dishes don't wash out the header.
+                colorFilter = ColorFilter.tint(Color.Black.copy(alpha = 0.25f), BlendMode.SrcAtop),
                 modifier = Modifier
                     .fillMaxSize()
                     .blur(radius = 10.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)

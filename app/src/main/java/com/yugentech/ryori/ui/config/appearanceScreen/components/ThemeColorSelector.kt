@@ -38,7 +38,8 @@ fun ThemeColorSelector(
     ) {
         SectionHeader(
             icon = Icons.Default.Palette,
-            title = ("Color Theme")
+            title = ("Color Theme"),
+            compact = true
         )
 
         Column(

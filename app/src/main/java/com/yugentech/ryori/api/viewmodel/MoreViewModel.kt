@@ -7,11 +7,15 @@ import com.yugentech.ryori.data.settings.SettingsRepository
 import com.yugentech.ryori.data.settings.UserSettings
 import com.yugentech.ryori.data.stats.KitchenRepository
 import com.yugentech.ryori.data.stats.KitchenStats
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 data class MoreUiState(
     val settings: UserSettings = UserSettings(),
@@ -53,7 +57,23 @@ class MoreViewModel(
 
     fun clearRecent() = persist { kitchen.clearRecent() }
 
+    // Shown as a toast when saving a change fails (e.g. storage full).
+    private val _notice = MutableStateFlow<String?>(null)
+    val notice: StateFlow<String?> = _notice.asStateFlow()
+
+    fun dismissNotice() {
+        _notice.value = null
+    }
+
     private fun persist(block: suspend () -> Unit) {
-        viewModelScope.launch { block() }
+        viewModelScope.launch {
+            try {
+                block()
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                Timber.w(e, "Couldn't save a change")
+                _notice.value = "Couldn't save that change. Please try again."
+            }
+        }
     }
 }

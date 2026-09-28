@@ -2,6 +2,9 @@ package com.yugentech.ryori.api.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.yugentech.ryori.api.error.AppError
+import com.yugentech.ryori.api.error.appErrorOrNull
+import com.yugentech.ryori.api.error.toAppError
 import com.yugentech.ryori.api.model.domain.Category
 import com.yugentech.ryori.api.model.domain.Recipe
 import com.yugentech.ryori.api.model.domain.RecipeFilter
@@ -19,7 +22,9 @@ import kotlinx.coroutines.launch
 
 data class HomeUiState(
     val isLoading: Boolean = true,
-    val error: String? = null,
+    val error: AppError? = null,
+    // One-off problem shown as a toast: a failed shuffle or surprise, or rows that couldn't load.
+    val notice: AppError? = null,
     val featured: List<Recipe> = emptyList(),
     val isRefreshingFeatured: Boolean = false,
     val cuisineSpotlight: String? = null,
@@ -53,42 +58,55 @@ class HomeViewModel(
 
     fun load() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+            _uiState.update { it.copy(isLoading = true, error = null, notice = null) }
 
             val featured = async { repository.getRandomMeals(count = 5) }
             val categories = async { repository.getCategories() }
             val drinks = async { repository.getDrinks() }
             val cuisine = async {
-                val area = repository.getAreas().getOrNull()?.randomOrNull()?.name
-                area to area?.let {
-                    repository.getRecipes(RecipeFilter.AREA, it).getOrNull()?.shuffled()?.take(10)
-                }.orEmpty()
+                val areas = repository.getAreas()
+                val area = areas.getOrNull()?.randomOrNull()?.name
+                    ?: return@async Spotlight(null, emptyList(), areas.appErrorOrNull())
+                val recipes = repository.getRecipes(RecipeFilter.AREA, area)
+                Spotlight(area, recipes.getOrNull()?.shuffled()?.take(10).orEmpty(), recipes.appErrorOrNull())
             }
             val category = async {
                 // Only categories the repository still offers (vegetarian mode hides the meat ones).
                 val available = categories.await().getOrNull().orEmpty().mapTo(HashSet()) { it.name }
                 val name = spotlightCategories.filter { it in available }.randomOrNull()
-                    ?: return@async (null as String?) to emptyList<RecipeSummary>()
-                name to repository.getRecipes(RecipeFilter.CATEGORY, name).getOrNull()?.shuffled()?.take(10).orEmpty()
+                    ?: return@async Spotlight(null, emptyList(), null)
+                val recipes = repository.getRecipes(RecipeFilter.CATEGORY, name)
+                Spotlight(name, recipes.getOrNull()?.shuffled()?.take(10).orEmpty(), recipes.appErrorOrNull())
             }
 
             val featuredResult = featured.await()
-            val (cuisineName, cuisineRecipes) = cuisine.await()
-            val (categoryName, categoryRecipes) = category.await()
+            val cuisineSpot = cuisine.await()
+            val categorySpot = category.await()
+            val drinksResult = drinks.await()
+            val categoriesResult = categories.await()
+
+            // The hero carousel is the heart of the screen, so only its failure counts as a
+            // screen error. Other rows just hide when they can't load, with a toast saying why.
+            val screenError = featuredResult.appErrorOrNull()
+            val rowError = listOfNotNull(
+                cuisineSpot.error,
+                categorySpot.error,
+                drinksResult.appErrorOrNull(),
+                categoriesResult.appErrorOrNull()
+            ).firstOrNull()
 
             _uiState.update {
                 it.copy(
                     isLoading = false,
-                    // The hero carousel is the heart of the screen, so only its failure counts
-                    // as a screen error; other rows just hide when they can't load.
-                    error = featuredResult.exceptionOrNull()?.let { e -> e.message ?: "Couldn't load recipes" },
+                    error = screenError,
+                    notice = if (screenError == null) rowError else null,
                     featured = featuredResult.getOrDefault(emptyList()),
-                    cuisineSpotlight = cuisineName.takeIf { cuisineRecipes.isNotEmpty() },
-                    cuisineRecipes = cuisineRecipes,
-                    categorySpotlight = categoryName.takeIf { categoryRecipes.isNotEmpty() },
-                    categoryRecipes = categoryRecipes,
-                    drinks = drinks.await().getOrDefault(emptyList()).shuffled().take(10),
-                    categories = categories.await().getOrDefault(emptyList())
+                    cuisineSpotlight = cuisineSpot.name.takeIf { cuisineSpot.recipes.isNotEmpty() },
+                    cuisineRecipes = cuisineSpot.recipes,
+                    categorySpotlight = categorySpot.name.takeIf { categorySpot.recipes.isNotEmpty() },
+                    categoryRecipes = categorySpot.recipes,
+                    drinks = drinksResult.getOrDefault(emptyList()).shuffled().take(10),
+                    categories = categoriesResult.getOrDefault(emptyList())
                 )
             }
         }
@@ -99,9 +117,9 @@ class HomeViewModel(
         if (_uiState.value.isRefreshingFeatured) return
         viewModelScope.launch {
             _uiState.update { it.copy(isRefreshingFeatured = true) }
-            repository.getRandomMeals(count = 5).onSuccess { recipes ->
-                _uiState.update { it.copy(featured = recipes) }
-            }
+            repository.getRandomMeals(count = 5)
+                .onSuccess { recipes -> _uiState.update { it.copy(featured = recipes) } }
+                .onFailure { e -> _uiState.update { it.copy(notice = e.toAppError()) } }
             _uiState.update { it.copy(isRefreshingFeatured = false) }
         }
     }
@@ -110,8 +128,14 @@ class HomeViewModel(
         if (_uiState.value.isSurpriseLoading) return
         viewModelScope.launch {
             _uiState.update { it.copy(isSurpriseLoading = true) }
-            repository.getRandomRecipeId(RecipeType.MEAL).onSuccess { id -> onFound(RecipeType.MEAL, id) }
+            repository.getRandomRecipeId(RecipeType.MEAL)
+                .onSuccess { id -> onFound(RecipeType.MEAL, id) }
+                .onFailure { e -> _uiState.update { it.copy(notice = e.toAppError()) } }
             _uiState.update { it.copy(isSurpriseLoading = false) }
         }
     }
+
+    fun dismissNotice() = _uiState.update { it.copy(notice = null) }
+
+    private data class Spotlight(val name: String?, val recipes: List<RecipeSummary>, val error: AppError?)
 }

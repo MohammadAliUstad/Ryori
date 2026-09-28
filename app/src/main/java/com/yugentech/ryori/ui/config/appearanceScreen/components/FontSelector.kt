@@ -39,7 +39,8 @@ fun FontSelector(
     Column(modifier = modifier.fillMaxWidth()) {
         SectionHeader(
             icon = Icons.Default.TextFields,
-            title = "App Font"
+            title = "App Font",
+            compact = true
         )
 
         LazyRow(

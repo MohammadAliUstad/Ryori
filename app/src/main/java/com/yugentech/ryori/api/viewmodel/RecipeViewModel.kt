@@ -2,6 +2,8 @@ package com.yugentech.ryori.api.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.yugentech.ryori.api.error.AppError
+import com.yugentech.ryori.api.error.toAppError
 import com.yugentech.ryori.api.model.domain.Recipe
 import com.yugentech.ryori.api.model.domain.RecipeSummary
 import com.yugentech.ryori.api.model.domain.RecipeType
@@ -19,7 +21,7 @@ import kotlinx.coroutines.launch
 
 data class RecipeUiState(
     val isLoading: Boolean = true,
-    val error: String? = null,
+    val error: AppError? = null,
     val recipe: Recipe? = null,
     val related: List<RecipeSummary> = emptyList(),
     // Indices of ingredients the user has ticked off while cooking.
@@ -57,9 +59,7 @@ class RecipeViewModel(
                     val related = repository.getRelated(recipe, limit = 10).getOrDefault(emptyList())
                     _uiState.update { it.copy(related = related) }
                 }
-                .onFailure { error ->
-                    _uiState.update { it.copy(isLoading = false, error = error.message ?: "Couldn't load this recipe") }
-                }
+                .onFailure { e -> _uiState.update { it.copy(isLoading = false, error = e.toAppError()) } }
         }
     }
 

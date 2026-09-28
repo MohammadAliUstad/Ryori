@@ -39,7 +39,6 @@ import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SearchOff
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material.icons.rounded.SortByAlpha
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -105,6 +104,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.yugentech.ryori.api.error.AppError
 import com.yugentech.ryori.api.model.domain.Area
 import com.yugentech.ryori.api.model.domain.Category
 import com.yugentech.ryori.api.model.domain.CuisineFlags
@@ -118,9 +118,11 @@ import com.yugentech.ryori.api.viewmodel.ExploreViewModel
 import com.yugentech.ryori.theme.service.HapticService
 import com.yugentech.ryori.theme.tokens.corners
 import com.yugentech.ryori.theme.tokens.spacing
+import com.yugentech.ryori.ui.main.mainScreen.components.ErrorState
 import com.yugentech.ryori.ui.main.mainScreen.components.RecipeCard
 import com.yugentech.ryori.ui.main.mainScreen.components.RecipeCardRow
 import com.yugentech.ryori.ui.main.mainScreen.components.SectionHeader
+import com.yugentech.ryori.ui.main.mainScreen.components.ToastMessage
 import com.yugentech.ryori.ui.main.mainScreen.components.rowItemShape
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
@@ -170,19 +172,21 @@ fun ExploreScreen(
     ) {
         // --- The scrolling content (the haze source the search bar blurs) ---
         AnimatedContent(
+            // Paired with the error so the error screen keeps its message while it fades out after
+            // "Try again" (the view model clears the error straight away).
             targetState = when {
                 uiState.isLoading -> ExploreMode.Loading
                 uiState.error != null -> ExploreMode.Error
                 else -> ExploreMode.Browse
-            },
+            } to uiState.error,
             transitionSpec = { fadeIn() togetherWith fadeOut() },
             label = "ExploreMode"
-        ) { mode ->
+        ) { (mode, shownError) ->
             when (mode) {
                 ExploreMode.Loading -> CenteredLoading()
 
                 ExploreMode.Error -> ErrorState(
-                    message = uiState.error ?: "Something went wrong",
+                    error = shownError ?: AppError.UNKNOWN,
                     onRetry = viewModel::load
                 )
 
@@ -305,11 +309,23 @@ fun ExploreScreen(
                         onRecipeClick = { recipe ->
                             closeSearch()
                             onRecipeClick(recipe.type, recipe.id)
-                        }
+                        },
+                        onRetry = viewModel::retrySearch
                     )
                 }
             }
         }
+
+        // Problems that don't take over the screen: a failed surprise, or sections that
+        // couldn't load. Sits just under the search bar.
+        ToastMessage(
+            message = uiState.notice?.short,
+            onDismiss = viewModel::dismissNotice,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = statusBarHeight + 80.dp)
+                .zIndex(2f)
+        )
     }
 }
 
@@ -364,10 +380,14 @@ private fun SearchSuggestions(onSuggestionClick: (String) -> Unit) {
 private fun SearchResults(
     uiState: ExploreUiState,
     contentPadding: PaddingValues,
-    onRecipeClick: (RecipeSummary) -> Unit
+    onRecipeClick: (RecipeSummary) -> Unit,
+    onRetry: () -> Unit
 ) {
     when {
         uiState.isSearching && uiState.searchResults.isEmpty() -> CenteredLoading()
+
+        // Offline or server trouble: say so rather than "No recipes found".
+        uiState.searchError != null -> ErrorState(error = uiState.searchError, onRetry = onRetry)
 
         uiState.searchResults.isEmpty() -> EmptyState(
             icon = Icons.Rounded.SearchOff,
@@ -384,7 +404,7 @@ private fun SearchResults(
                 bottom = contentPadding.calculateBottomPadding() + MaterialTheme.spacing.s
             ),
             horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.s),
-            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.s),
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.none),
             modifier = Modifier.fillMaxSize()
         ) {
             gridItems(uiState.searchResults, key = { "${it.type}_${it.id}" }) { recipe ->
@@ -759,32 +779,6 @@ private fun LetterButton(letter: Char, onClick: () -> Unit) {
 private fun CenteredLoading() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         CircularProgressIndicator()
-    }
-}
-
-@Composable
-private fun ErrorState(message: String, onRetry: () -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(MaterialTheme.spacing.xl)
-    ) {
-        Text(
-            text = "Couldn't load Explore",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(Modifier.height(MaterialTheme.spacing.xs))
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
-        Spacer(Modifier.height(MaterialTheme.spacing.m))
-        Button(onClick = onRetry) { Text("Try again") }
     }
 }
 

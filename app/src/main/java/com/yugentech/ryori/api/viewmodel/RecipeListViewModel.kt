@@ -2,6 +2,8 @@ package com.yugentech.ryori.api.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.yugentech.ryori.api.error.AppError
+import com.yugentech.ryori.api.error.toAppError
 import com.yugentech.ryori.api.model.domain.RecipeFilter
 import com.yugentech.ryori.api.model.domain.RecipeSummary
 import com.yugentech.ryori.api.repository.RecipeRepository
@@ -13,7 +15,7 @@ import kotlinx.coroutines.launch
 
 data class RecipeListUiState(
     val isLoading: Boolean = true,
-    val error: String? = null,
+    val error: AppError? = null,
     val recipes: List<RecipeSummary> = emptyList()
 )
 
@@ -35,9 +37,7 @@ class RecipeListViewModel(
             _uiState.update { it.copy(isLoading = true, error = null) }
             repository.getRecipes(filter, value)
                 .onSuccess { recipes -> _uiState.update { it.copy(isLoading = false, recipes = recipes) } }
-                .onFailure { error ->
-                    _uiState.update { it.copy(isLoading = false, error = error.message ?: "Couldn't load recipes") }
-                }
+                .onFailure { e -> _uiState.update { it.copy(isLoading = false, error = e.toAppError()) } }
         }
     }
 }

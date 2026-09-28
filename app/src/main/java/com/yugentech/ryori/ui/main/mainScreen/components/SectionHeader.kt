@@ -17,10 +17,13 @@ import androidx.compose.ui.text.font.FontWeight
 import com.yugentech.ryori.theme.tokens.icons
 import com.yugentech.ryori.theme.tokens.spacing
 
+// compact = true uses Quill's tighter settings-page spacing (16dp top / 8dp bottom) for stacked
+// settings sections such as Appearance; the default (24dp / 12dp) separates content sections.
 @Composable
 fun SectionHeader(
     icon: ImageVector,
-    title: String
+    title: String,
+    compact: Boolean = false
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -28,8 +31,8 @@ fun SectionHeader(
             .fillMaxWidth()
             .padding(
                 start = MaterialTheme.spacing.m,
-                bottom = MaterialTheme.spacing.sm,
-                top = MaterialTheme.spacing.l
+                bottom = if (compact) MaterialTheme.spacing.s else MaterialTheme.spacing.sm,
+                top = if (compact) MaterialTheme.spacing.m else MaterialTheme.spacing.l
             )
     ) {
         Icon(

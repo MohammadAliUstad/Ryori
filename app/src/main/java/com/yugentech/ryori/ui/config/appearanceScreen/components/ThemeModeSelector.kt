@@ -47,7 +47,8 @@ fun ThemeModeSelector(
     Column(modifier = modifier.fillMaxWidth()) {
         SectionHeader(
             icon = Icons.Default.Brightness6,
-            title = "Theme Mode"
+            title = "Theme Mode",
+            compact = true
         )
 
         Column(
