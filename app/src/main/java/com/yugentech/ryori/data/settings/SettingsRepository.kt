@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import timber.log.Timber
 import java.io.IOException
 
 // The user's profile and preferences, stored on the device (no account needed).
@@ -39,7 +38,6 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
     val settings: Flow<UserSettings> = dataStore.data
         .catch { e ->
             if (e !is IOException) throw e
-            Timber.w(e, "Couldn't read settings, using defaults")
             emit(emptyPreferences())
         }
         .map { prefs ->
