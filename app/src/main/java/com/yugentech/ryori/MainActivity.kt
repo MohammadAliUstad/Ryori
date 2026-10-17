@@ -51,6 +51,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val navController = rememberNavController()
             val themeConfiguration by themeViewModel.themeConfiguration.collectAsStateWithLifecycle()
+            val hapticsEnabled by themeViewModel.hapticsEnabled.collectAsStateWithLifecycle()
 
             val darkTheme = when (themeConfiguration.themeMode) {
                 ThemeMode.LIGHT -> false
@@ -71,7 +72,7 @@ class MainActivity : ComponentActivity() {
                 }
             )
 
-            RyoriTheme(themeConfiguration = themeConfiguration) {
+            RyoriTheme(themeConfiguration = themeConfiguration, hapticsEnabled = hapticsEnabled) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

@@ -7,7 +7,6 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -71,7 +70,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -90,8 +90,8 @@ import com.yugentech.ryori.api.model.domain.RecipeSummary
 import com.yugentech.ryori.api.model.domain.RecipeType
 import com.yugentech.ryori.api.viewmodel.HomeUiState
 import com.yugentech.ryori.api.viewmodel.HomeViewModel
-import com.yugentech.ryori.theme.service.HapticService
 import com.yugentech.ryori.theme.tokens.corners
+import com.yugentech.ryori.theme.tokens.dimensions.AppAnimations
 import com.yugentech.ryori.theme.tokens.spacing
 import com.yugentech.ryori.ui.main.mainScreen.components.ErrorState
 import com.yugentech.ryori.ui.main.mainScreen.components.ParallaxBackground
@@ -102,7 +102,6 @@ import com.yugentech.ryori.ui.main.mainScreen.components.rememberShimmerColor
 import com.yugentech.ryori.ui.main.mainScreen.components.rowItemShape
 import java.time.LocalTime
 import org.koin.androidx.compose.koinViewModel
-import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -115,6 +114,7 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsState()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val listState = rememberLazyListState()
+    val fadeThrough = AppAnimations.Transitions.rememberExpressiveFadeThrough()
 
     // Same as Quill's Library: the bar is transparent over a blurred parallax photo, and a
     // surface gradient fades in behind it as the content scrolls up.
@@ -199,7 +199,7 @@ fun HomeScreen(
                 } else {
                     null
                 },
-                transitionSpec = { fadeIn() togetherWith fadeOut() },
+                transitionSpec = { fadeThrough() },
                 label = "HomeError"
             ) { shownError ->
                 if (shownError != null) {
@@ -249,6 +249,7 @@ private fun HomeContent(
     val rowPadding = PaddingValues(horizontal = MaterialTheme.spacing.m)
     val loading = uiState.isLoading
     val shimmer = rememberShimmerColor()
+    val haptic = LocalHapticFeedback.current
 
     // While loading, every section shows its real header straight away and a placeholder the
     // exact size of its content, so nothing moves when the data arrives. Each placeholder
@@ -269,7 +270,10 @@ private fun HomeContent(
                     title = "Featured today",
                     action = {
                         IconButton(
-                            onClick = onShuffleFeatured,
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
+                                onShuffleFeatured()
+                            },
                             enabled = !loading && !uiState.isRefreshingFeatured
                         ) {
                             if (uiState.isRefreshingFeatured) {
@@ -490,6 +494,8 @@ private fun HomeSectionHeader(
     title: String,
     action: (@Composable () -> Unit)? = null
 ) {
+    val fadeThrough = AppAnimations.Transitions.rememberExpressiveFadeThrough()
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -508,10 +514,10 @@ private fun HomeSectionHeader(
             modifier = Modifier.size(20.dp)
         )
         Spacer(Modifier.width(MaterialTheme.spacing.sm))
-        // Fades when a loading title ("Taste of the world") becomes the real one.
+        // Fades through when a loading title ("Taste of the world") becomes the real one.
         AnimatedContent(
             targetState = title,
-            transitionSpec = { fadeIn(tween(HOME_REVEAL_MILLIS)) togetherWith fadeOut(tween(HOME_REVEAL_MILLIS)) },
+            transitionSpec = { fadeThrough() },
             label = "HomeSectionTitle",
             modifier = Modifier.weight(1f)
         ) { text ->
@@ -620,12 +626,11 @@ private fun FeaturedPager(
 
 @Composable
 private fun FeaturedCard(recipe: Recipe, onClick: () -> Unit) {
-    val haptic = koinInject<HapticService>()
-    val view = LocalView.current
+    val haptic = LocalHapticFeedback.current
 
     Card(
         onClick = {
-            haptic.performHaptic(view)
+            haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
             onClick()
         },
         shape = RoundedCornerShape(MaterialTheme.corners.extraLarge),
@@ -752,12 +757,11 @@ private fun QuickPickCard(
     modifier: Modifier = Modifier,
     loading: Boolean = false
 ) {
-    val haptic = koinInject<HapticService>()
-    val view = LocalView.current
+    val haptic = LocalHapticFeedback.current
 
     Card(
         onClick = {
-            haptic.performHaptic(view)
+            haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
             onClick()
         },
         shape = shape,
@@ -792,12 +796,11 @@ private fun QuickPickCard(
 
 @Composable
 private fun CategoryTile(category: Category, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val haptic = koinInject<HapticService>()
-    val view = LocalView.current
+    val haptic = LocalHapticFeedback.current
 
     Card(
         onClick = {
-            haptic.performHaptic(view)
+            haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
             onClick()
         },
         shape = RoundedCornerShape(MaterialTheme.corners.large),

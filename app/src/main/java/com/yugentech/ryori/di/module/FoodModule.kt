@@ -36,5 +36,7 @@ val foodModule = module {
     single { FoodService(api = get()) }
     single { DrinkService(api = get()) }
     single<FoodRepository> { FoodRepositoryImpl(service = get()) }
-    single<RecipeRepository> { RecipeRepositoryImpl(foodService = get(), drinkService = get(), settings = get()) }
+    single<RecipeRepository> {
+        RecipeRepositoryImpl(foodService = get(), drinkService = get(), settings = get(), cache = get(), json = get())
+    }
 }

@@ -1,5 +1,7 @@
 package com.yugentech.ryori.api.repository
 
+import com.yugentech.ryori.api.cache.ApiCache
+import com.yugentech.ryori.api.cache.CachePolicy
 import com.yugentech.ryori.api.error.NotFoundException
 import com.yugentech.ryori.api.model.domain.Area
 import com.yugentech.ryori.api.model.domain.Category
@@ -17,11 +19,20 @@ import com.yugentech.ryori.api.service.FoodService
 import com.yugentech.ryori.data.settings.SettingsRepository
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.sync.withPermit
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 class RecipeRepositoryImpl(
     private val foodService: FoodService,
     private val drinkService: DrinkService,
-    private val settings: SettingsRepository
+    private val settings: SettingsRepository,
+    private val cache: ApiCache,
+    private val json: Json
 ) : RecipeRepository {
 
     override suspend fun getCategories(): Result<List<Category>> = runCatching {
@@ -38,27 +49,78 @@ class RecipeRepositoryImpl(
         }.filterNot { vegetarian && it.name.isMeatCategory() }
     }
 
-    // TheMealDB's cuisine list can include cuisines it has no meals for yet, which would open an
-    // empty list. Keep only cuisines with at least one recipe. The per-cuisine checks run in
-    // parallel and go through the response cache (1 day), so this is cheap after the first run
-    // and the cuisine screens then open instantly from the same cached lists.
+    // TheMealDB's cuisine list now names ~195 countries, most with no meals yet, which would
+    // open an empty list. Keep only cuisines with at least one recipe. On a cold cache that's
+    // ~195 requests, so they run a few at a time (a burst gets requests rejected), and a
+    // complete result is kept for the session and saved for a week, so the checks run at most
+    // weekly rather than every launch.
     override suspend fun getAreas(): Result<List<Area>> = runCatching {
-        val names = foodService.getMealAreas().meals.orEmpty()
+        verifiedAreas ?: areasMutex.withLock {
+            verifiedAreas?.let { return@withLock it }
+            val saved = cache.get(VERIFIED_AREAS_KEY)
+            val savedAreas = saved?.let { entry ->
+                runCatching { json.decodeFromString<List<String>>(entry.body).map { Area(it) } }.getOrNull()
+            }
+            if (saved != null && savedAreas != null && saved.isFresh(CachePolicy.STATIC)) {
+                verifiedAreas = savedAreas
+                return@withLock savedAreas
+            }
+            val checks = Semaphore(AREA_CHECK_CONCURRENCY)
+            val results = coroutineScope {
+                areaNames().map { name ->
+                    async {
+                        name to checks.withPermit {
+                            runCatching { foodService.getMealsByArea(name).meals.orEmpty().any { it != null } }
+                        }
+                    }
+                }.map { it.await() }
+            }
+            val areas = results.filter { (_, hasRecipes) -> hasRecipes.getOrDefault(false) }
+                .map { (name, _) -> Area(name) }
+            // Only remember a list where every check got an answer; otherwise retry next time,
+            // and meanwhile prefer the last complete list (however old) to this partial one.
+            if (results.all { it.second.isSuccess }) {
+                verifiedAreas = areas
+                cache.put(VERIFIED_AREAS_KEY, json.encodeToString(areas.map { it.name }))
+                areas
+            } else {
+                savedAreas ?: areas
+            }
+        }
+    }
+
+    // A cuisine with recipes for Home, in a request or two rather than getAreas()' ~195. Only
+    // about 30 of TheMealDB's cuisines have meals, so random picks mostly miss; [preferred]
+    // (e.g. the featured meals' cuisines, which certainly have recipes) are tried first.
+    override suspend fun getCuisineSpotlight(
+        limit: Int,
+        preferred: List<String>
+    ): Result<Pair<String, List<RecipeSummary>>> = runCatching {
+        val known = verifiedAreas?.map { it.name }
+        val candidates = (preferred.shuffled() + (known ?: areaNames()).shuffled())
+            .distinct()
+            .take(SPOTLIGHT_ATTEMPTS)
+        var failure: Throwable? = null
+        for (name in candidates) {
+            getRecipes(RecipeFilter.AREA, name)
+                .onFailure { failure = it }
+                .getOrNull()
+                ?.takeIf { it.isNotEmpty() }
+                ?.let { return@runCatching name to it.shuffled().take(limit) }
+        }
+        throw failure ?: NotFoundException("No cuisine with recipes found")
+    }
+
+    private suspend fun areaNames(): List<String> =
+        foodService.getMealAreas().meals.orEmpty()
             .mapNotNull { it.strArea?.trim()?.takeIf(String::isNotEmpty) }
             .filter { it != "Unknown" }
             .distinct()
 
-        coroutineScope {
-            names.map { name ->
-                async {
-                    val hasRecipes = runCatching {
-                        foodService.getMealsByArea(name).meals.orEmpty().any { it != null }
-                    }.getOrDefault(false)
-                    name.takeIf { hasRecipes }
-                }
-            }.mapNotNull { it.await() }
-        }.map { Area(it) }
-    }
+    private val areasMutex = Mutex()
+
+    @Volatile
+    private var verifiedAreas: List<Area>? = null
 
     // TheMealDB lists ingredients by id, and the lowest ids are the staples (chicken, salmon,
     // beef, pork, ...), so the first entries make a good "popular" row.
@@ -337,6 +399,12 @@ class RecipeRepositoryImpl(
     }
 
     private companion object {
+        const val AREA_CHECK_CONCURRENCY = 6
+
+        // ApiCache entry for the checked cuisine list. Not a real URL, so no request maps to it.
+        const val VERIFIED_AREAS_KEY = "ryori://verified-areas"
+        const val SPOTLIGHT_ATTEMPTS = 12
+
         val MEAT_CATEGORIES = listOf("Beef", "Chicken", "Lamb", "Pork", "Goat", "Seafood")
 
         // Used by "Surprise me" in vegetarian mode.

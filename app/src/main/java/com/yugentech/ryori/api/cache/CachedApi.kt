@@ -7,6 +7,7 @@ import io.ktor.client.request.parameter
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.URLBuilder
 import io.ktor.http.isSuccess
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.json.Json
@@ -76,12 +77,32 @@ class CachedApi(
     // Approximate size of all cached responses, in bytes.
     val sizeBytes: Flow<Long> get() = cache.sizeBytes
 
+    // Rate limiting (429) and brief server errors (5xx) usually clear within a second, so those
+    // are retried a couple of times with a growing pause before giving up.
     private suspend fun fetch(url: String, params: Map<String, String>): String {
+        repeat(RETRIES) { attempt ->
+            try {
+                return fetchOnce(url, params)
+            } catch (e: HttpStatusException) {
+                if (e.status != 429 && e.status < 500) throw e
+                Timber.i("CachedApi: HTTP ${e.status} for $url, retrying")
+                delay(RETRY_DELAY_MILLIS * (attempt + 1))
+            }
+        }
+        return fetchOnce(url, params)
+    }
+
+    private suspend fun fetchOnce(url: String, params: Map<String, String>): String {
         val response = client.get(url) {
             params.forEach { (name, value) -> parameter(name, value) }
         }
         if (!response.status.isSuccess()) throw HttpStatusException(response.status.value, url)
         return response.bodyAsText()
+    }
+
+    private companion object {
+        const val RETRIES = 2
+        const val RETRY_DELAY_MILLIS = 600L
     }
 
     // Parameters sorted so the same request always maps to the same entry.

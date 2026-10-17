@@ -2,6 +2,7 @@ package com.yugentech.ryori.theme.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.yugentech.ryori.data.settings.SettingsRepository
 import com.yugentech.ryori.theme.AppFont
 import com.yugentech.ryori.theme.config.ColorTheme
 import com.yugentech.ryori.theme.config.ThemeConfiguration
@@ -16,8 +17,18 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class ThemeViewModel(
-    private val repository: ThemeRepository
+    private val repository: ThemeRepository,
+    settingsRepository: SettingsRepository
 ) : ViewModel() {
+
+    // The "Haptic feedback" switch on the More screen; RyoriTheme gates all haptics on it.
+    val hapticsEnabled: StateFlow<Boolean> = settingsRepository.settings
+        .map { it.hapticsEnabled }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = true
+        )
 
     // Internal mutable state for the current theme configuration
     private val _themeConfiguration = MutableStateFlow(

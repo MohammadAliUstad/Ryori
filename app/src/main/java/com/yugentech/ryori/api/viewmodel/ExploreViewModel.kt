@@ -14,6 +14,7 @@ import com.yugentech.ryori.api.repository.RecipeRepository
 import com.yugentech.ryori.data.settings.SettingsRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,7 +25,12 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class ExploreUiState(
-    val isLoading: Boolean = true,
+    // Each section loads on its own and shows as soon as it's in, with a skeleton until then.
+    val categoriesLoading: Boolean = true,
+    val areasLoading: Boolean = true,
+    val ingredientsLoading: Boolean = true,
+    val drinksLoading: Boolean = true,
+    // Set only when every section failed; then the whole screen shows the error.
     val error: AppError? = null,
     // One-off problem shown as a toast: a failed surprise, or sections that couldn't load.
     val notice: AppError? = null,
@@ -51,6 +57,9 @@ class ExploreViewModel(
 
     private var searchJob: Job? = null
 
+    // A reload (retry, or vegetarian mode changing) replaces one still in flight.
+    private var loadJob: Job? = null
+
     init {
         load()
         // Vegetarian mode changes the categories, ingredients and search results on offer.
@@ -63,34 +72,58 @@ class ExploreViewModel(
     }
 
     fun load() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null, notice = null) }
-
-            val categories = async { repository.getCategories() }
-            val areas = async { repository.getAreas() }
-            val ingredients = async { repository.getPopularIngredients(limit = 24) }
-            val drinks = async { repository.getDrinks() }
-
-            val categoriesResult = categories.await()
-            val areasResult = areas.await()
-            val ingredientsResult = ingredients.await()
-            val drinksResult = drinks.await()
-
-            // Sections load independently: one failing endpoint just hides its section (with a
-            // toast saying why). Only show the error state if nothing at all came back.
-            val results = listOf(categoriesResult, areasResult, ingredientsResult, drinksResult)
-            val nothingLoaded = results.all { it.isFailure }
-            val firstError = results.firstNotNullOfOrNull { it.appErrorOrNull() }
-
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             _uiState.update {
                 it.copy(
-                    isLoading = false,
+                    categoriesLoading = true,
+                    areasLoading = true,
+                    ingredientsLoading = true,
+                    drinksLoading = true,
+                    error = null,
+                    notice = null
+                )
+            }
+
+            // Each section is shown the moment its own request finishes, so a slow one (the
+            // cuisine checks, on a cold cache) no longer holds up the rest.
+            val results = listOf(
+                async {
+                    repository.getCategories().also { result ->
+                        _uiState.update {
+                            it.copy(categoriesLoading = false, categories = result.getOrDefault(emptyList()))
+                        }
+                    }
+                },
+                async {
+                    repository.getAreas().also { result ->
+                        _uiState.update { it.copy(areasLoading = false, areas = result.getOrDefault(emptyList())) }
+                    }
+                },
+                async {
+                    repository.getPopularIngredients(limit = 24).also { result ->
+                        _uiState.update {
+                            it.copy(ingredientsLoading = false, ingredients = result.getOrDefault(emptyList()))
+                        }
+                    }
+                },
+                async {
+                    repository.getDrinks().also { result ->
+                        _uiState.update {
+                            it.copy(drinksLoading = false, drinks = result.getOrDefault(emptyList()).shuffled().take(12))
+                        }
+                    }
+                }
+            ).awaitAll()
+
+            // One failing endpoint just hides its section (with a toast saying why). Only show
+            // the error state if nothing at all came back.
+            val nothingLoaded = results.all { it.isFailure }
+            val firstError = results.firstNotNullOfOrNull { it.appErrorOrNull() }
+            _uiState.update {
+                it.copy(
                     error = if (nothingLoaded) firstError else null,
-                    notice = if (nothingLoaded) null else firstError,
-                    categories = categoriesResult.getOrDefault(emptyList()),
-                    areas = areasResult.getOrDefault(emptyList()),
-                    ingredients = ingredientsResult.getOrDefault(emptyList()),
-                    drinks = drinksResult.getOrDefault(emptyList()).shuffled().take(12)
+                    notice = if (nothingLoaded) null else firstError
                 )
             }
         }

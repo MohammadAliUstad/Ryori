@@ -12,6 +12,7 @@ import com.yugentech.ryori.api.model.domain.RecipeSummary
 import com.yugentech.ryori.api.model.domain.RecipeType
 import com.yugentech.ryori.api.repository.RecipeRepository
 import com.yugentech.ryori.data.settings.SettingsRepository
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -56,59 +57,70 @@ class HomeViewModel(
         viewModelScope.launch { settings.vegetarianMode.drop(1).collect { load() } }
     }
 
+    // A reload (retry, vegetarian mode flip) replaces the one in flight, so rows from the old
+    // load can't land on top of the new one.
+    private var loadJob: Job? = null
+
     fun load() {
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null, notice = null) }
 
-            val featured = async { repository.getRandomMeals(count = 5) }
-            val categories = async { repository.getCategories() }
-            val drinks = async { repository.getDrinks() }
+            // Each part lands on screen as soon as it's ready, so the hero carousel isn't held up
+            // by the slower rows below it.
+            val featured = async {
+                repository.getRandomMeals(count = 5).also { result ->
+                    // The hero carousel is the heart of the screen, so only its failure counts
+                    // as a screen error. Other rows just hide, with a toast saying why.
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            error = result.appErrorOrNull(),
+                            featured = result.getOrDefault(emptyList())
+                        )
+                    }
+                }
+            }
+            val categories = async {
+                repository.getCategories().also { result ->
+                    _uiState.update { it.copy(categories = result.getOrDefault(emptyList())) }
+                }
+            }
+            val drinks = async {
+                repository.getDrinks().also { result ->
+                    _uiState.update { it.copy(drinks = result.getOrDefault(emptyList()).shuffled().take(10)) }
+                }
+            }
             val cuisine = async {
-                val areas = repository.getAreas()
-                val area = areas.getOrNull()?.randomOrNull()?.name
-                    ?: return@async Spotlight(null, emptyList(), areas.appErrorOrNull())
-                val recipes = repository.getRecipes(RecipeFilter.AREA, area)
-                Spotlight(area, recipes.getOrNull()?.shuffled()?.take(10).orEmpty(), recipes.appErrorOrNull())
+                // The featured meals' cuisines certainly have recipes, so try those first.
+                val preferred = featured.await().getOrNull().orEmpty().mapNotNull { it.area }
+                val result = repository.getCuisineSpotlight(limit = 10, preferred = preferred)
+                val (name, recipes) = result.getOrNull() ?: (null to emptyList())
+                _uiState.update { it.copy(cuisineSpotlight = name, cuisineRecipes = recipes) }
+                result.appErrorOrNull()
             }
             val category = async {
                 // Only categories the repository still offers (vegetarian mode hides the meat ones).
                 val available = categories.await().getOrNull().orEmpty().mapTo(HashSet()) { it.name }
                 val name = spotlightCategories.filter { it in available }.randomOrNull()
-                    ?: return@async Spotlight(null, emptyList(), null)
+                    ?: return@async null
                 val recipes = repository.getRecipes(RecipeFilter.CATEGORY, name)
-                Spotlight(name, recipes.getOrNull()?.shuffled()?.take(10).orEmpty(), recipes.appErrorOrNull())
+                val picked = recipes.getOrNull()?.shuffled()?.take(10).orEmpty()
+                _uiState.update {
+                    it.copy(categorySpotlight = name.takeIf { picked.isNotEmpty() }, categoryRecipes = picked)
+                }
+                recipes.appErrorOrNull()
             }
 
-            val featuredResult = featured.await()
-            val cuisineSpot = cuisine.await()
-            val categorySpot = category.await()
-            val drinksResult = drinks.await()
-            val categoriesResult = categories.await()
-
-            // The hero carousel is the heart of the screen, so only its failure counts as a
-            // screen error. Other rows just hide when they can't load, with a toast saying why.
-            val screenError = featuredResult.appErrorOrNull()
+            val screenError = featured.await().appErrorOrNull()
             val rowError = listOfNotNull(
-                cuisineSpot.error,
-                categorySpot.error,
-                drinksResult.appErrorOrNull(),
-                categoriesResult.appErrorOrNull()
+                cuisine.await(),
+                category.await(),
+                drinks.await().appErrorOrNull(),
+                categories.await().appErrorOrNull()
             ).firstOrNull()
 
-            _uiState.update {
-                it.copy(
-                    isLoading = false,
-                    error = screenError,
-                    notice = if (screenError == null) rowError else null,
-                    featured = featuredResult.getOrDefault(emptyList()),
-                    cuisineSpotlight = cuisineSpot.name.takeIf { cuisineSpot.recipes.isNotEmpty() },
-                    cuisineRecipes = cuisineSpot.recipes,
-                    categorySpotlight = categorySpot.name.takeIf { categorySpot.recipes.isNotEmpty() },
-                    categoryRecipes = categorySpot.recipes,
-                    drinks = drinksResult.getOrDefault(emptyList()).shuffled().take(10),
-                    categories = categoriesResult.getOrDefault(emptyList())
-                )
-            }
+            if (screenError == null && rowError != null) _uiState.update { it.copy(notice = rowError) }
         }
     }
 
@@ -136,6 +148,4 @@ class HomeViewModel(
     }
 
     fun dismissNotice() = _uiState.update { it.copy(notice = null) }
-
-    private data class Spotlight(val name: String?, val recipes: List<RecipeSummary>, val error: AppError?)
 }

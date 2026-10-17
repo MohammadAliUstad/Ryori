@@ -30,6 +30,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.outlined.Analytics
 import androidx.compose.material.icons.outlined.AutoAwesome
@@ -42,24 +43,32 @@ import androidx.compose.material.icons.outlined.Insights
 import androidx.compose.material.icons.outlined.LocalLibrary
 import androidx.compose.material.icons.outlined.LunchDining
 import androidx.compose.material.icons.outlined.Psychology
+import androidx.compose.material.icons.outlined.RecordVoiceOver
+import androidx.compose.material.icons.outlined.School
 import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.material.icons.outlined.Translate
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel
 import androidx.compose.material3.carousel.rememberCarouselState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -198,6 +207,53 @@ private val sessions = SisterApp(
     )
 )
 
+private val hajime = SisterApp(
+    name = "Hajime",
+    tagline = "Learn to Read Japanese",
+    packageName = "com.yugentech.hajime",
+    animatedIcon = R.drawable.avd_hajime,
+    iconBackground = Color(0xFFF5F0E8),
+    iconSize = 156.dp,
+    animationMillis = 1660,
+    // Not on the store yet, so its card has no stats strip.
+    facts = emptyList(),
+    features = listOf(
+        Feature(
+            Icons.Outlined.Translate,
+            "Learn to Read Japanese",
+            "Hiragana and katakana first, then kanji, words and sentences, one short lesson at a time."
+        ),
+        Feature(
+            Icons.Outlined.School,
+            "Every JLPT Kanji",
+            "N5 to N1 kanji with readings, meanings, parts, common words and example sentences with furigana."
+        ),
+        Feature(
+            Icons.Outlined.History,
+            "Reviews That Remember",
+            "Spaced repetition brings each item back just before you'd forget it, so what you learn sticks."
+        ),
+        Feature(
+            Icons.Outlined.AutoAwesome,
+            "Sensei, Your AI Tutor",
+            "Ask anything about Japanese and get stories, sentence breakdowns and quizzes built from what you've learned."
+        ),
+        Feature(
+            Icons.Outlined.RecordVoiceOver,
+            "Hear Every Word",
+            "Every kana, kanji, word and sentence can be read aloud in a Japanese voice."
+        ),
+        Feature(
+            Icons.Outlined.Insights,
+            "Study Insights",
+            "Streaks, a study heatmap, your trickiest mix-ups and progress through every JLPT level."
+        )
+    )
+)
+
+// Where each app's carousel starts in the primary / secondary / tertiary cycle.
+private val CarouselColorOffsets = listOf(0, 2, 1)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MoreAppsScreen(
@@ -241,18 +297,18 @@ fun MoreAppsScreen(
         ) {
             item { IntroText() }
 
-            listOf(quill, sessions).forEachIndexed { appIndex, app ->
+            listOf(quill, hajime, sessions).forEachIndexed { appIndex, app ->
                 item(key = "${app.name}_hero") {
                     AppHeroCard(app = app, onGetApp = { openStore(context, app.packageName) })
                 }
                 item(key = "${app.name}_features") {
                     Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.m)) {
                         SectionLabel("Key Features")
-                        // The second app starts at tertiary so the two carousels don't repeat the same colours.
-                        FeatureCarousel(features = app.features, colorOffset = if (appIndex == 0) 0 else 2)
+                        // Each carousel starts on a different colour (primary, tertiary, secondary) so they don't repeat.
+                        FeatureCarousel(features = app.features, colorOffset = CarouselColorOffsets[appIndex])
                     }
                 }
-                // Between the two apps, and between the second app and the closing card.
+                // Between the apps, and between the last app and the closing card.
                 item(key = "${app.name}_divider") { SectionDivider() }
             }
 
@@ -268,13 +324,13 @@ private fun IntroText() {
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xs)
     ) {
         Text(
-            text = "Two more apps, made with the same care",
+            text = "Three more apps, made with the same care",
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
         )
         Text(
-            text = "If you enjoy cooking with Ryori, you might like reading with Quill and focusing with Sessions.",
+            text = "If you enjoy cooking with Ryori, you might like reading with Quill, learning Japanese with Hajime and focusing with Sessions.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -542,17 +598,18 @@ private fun ClosingCard() {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OverviewIcon(icon = Icons.Outlined.LunchDining, contentDescription = "Ryori")
                 OverviewIcon(icon = Icons.Outlined.AutoStories, contentDescription = "Quill")
+                OverviewIcon(icon = Icons.Outlined.Translate, contentDescription = "Hajime")
                 OverviewIcon(icon = Icons.Outlined.Timer, contentDescription = "Sessions")
             }
             Text(
-                text = "Cook. Read. Focus.",
+                text = "Cook. Read. Learn. Focus.",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                 textAlign = TextAlign.Center
             )
             Text(
-                text = "Ryori, Quill and Sessions are made by YugenTech: small, thoughtful apps built to make everyday moments a little calmer.",
+                text = "Ryori, Quill, Hajime and Sessions are made by YugenTech: small, thoughtful apps built to make everyday moments a little calmer.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
                 textAlign = TextAlign.Center,
@@ -602,6 +659,195 @@ private fun AnimatedAppIcon(
             }
         }
     )
+}
+
+// ============================== Sheet ==============================
+
+/**
+ * The short version of this screen, opened from the More tab's About section: each app's icon,
+ * name and tagline with a Play Store button, then a link to the full screen. Tapping an icon
+ * plays its animation.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MoreFromUsSheet(onDismiss: () -> Unit, onSeeAll: () -> Unit) {
+    val context = LocalContext.current
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+    val apps = listOf(quill, hajime, sessions)
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        // Sessions' sheet handle: a small pill with roomy padding, so it's easy to grab.
+        dragHandle = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {}
+                    )
+                    .padding(vertical = 22.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(width = 32.dp, height = 6.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                            shape = CircleShape
+                        )
+                )
+            }
+        }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 16.dp)
+        ) {
+            Text(
+                text = "More from us",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = "Three more apps, made with the same care.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+
+            Column(
+                modifier = Modifier.padding(top = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                apps.forEachIndexed { index, app ->
+                    SheetAppRow(
+                        name = app.name,
+                        tagline = app.tagline,
+                        iconBackground = app.iconBackground,
+                        animationMillis = app.animationMillis,
+                        index = index,
+                        count = apps.size,
+                        onGetApp = { openStore(context, app.packageName) }
+                    ) { isAnimating ->
+                        AnimatedAppIcon(
+                            drawableRes = app.animatedIcon,
+                            isAnimating = isAnimating,
+                            // Scaled from the full screen's 88dp tile to the sheet's 56dp one.
+                            modifier = Modifier.requiredSize(app.iconSize * (56f / 88f))
+                        )
+                    }
+                }
+            }
+
+            TextButton(
+                onClick = {
+                    // Slides the sheet away first, so it doesn't vanish under the new screen.
+                    scope.launch { sheetState.hide() }.invokeOnCompletion {
+                        onDismiss()
+                        onSeeAll()
+                    }
+                },
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(top = 12.dp)
+            ) {
+                Text("See all features")
+                Spacer(modifier = Modifier.width(8.dp))
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SheetAppRow(
+    name: String,
+    tagline: String,
+    iconBackground: Color,
+    animationMillis: Long,
+    index: Int,
+    count: Int,
+    onGetApp: () -> Unit,
+    icon: @Composable (isAnimating: Boolean) -> Unit
+) {
+    var isAnimating by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val play: () -> Unit = {
+        if (!isAnimating) {
+            isAnimating = true
+            scope.launch {
+                delay(animationMillis)
+                isAnimating = false
+            }
+        }
+    }
+    val large = 20.dp
+    val small = 6.dp
+    Surface(
+        shape = RoundedCornerShape(
+            topStart = if (index == 0) large else small,
+            topEnd = if (index == 0) large else small,
+            bottomStart = if (index == count - 1) large else small,
+            bottomEnd = if (index == count - 1) large else small
+        ),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(iconBackground)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = play
+                    )
+            ) {
+                icon(isAnimating)
+            }
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 16.dp)
+            ) {
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = tagline,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            FilledTonalButton(
+                onClick = onGetApp,
+                contentPadding = PaddingValues(horizontal = 18.dp)
+            ) {
+                Text("Get")
+            }
+        }
+    }
 }
 
 // Play Store app if installed, otherwise the store's web page.

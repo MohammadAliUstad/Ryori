@@ -3,7 +3,8 @@
     RYORI BURGER, ANIMATED VECTOR (splash screen)
     Converted from art/burger-vanilla-animated.svg (SMIL). Android can't play SMIL, so each
     effect is rebuilt with vector properties:
-      - bun drop-in / rise-up  -> group translateY, two steps (overshoot, then settle)
+      - bun drop-in / rise-up  -> group translateY, two steps (overshoot, then settle),
+                                  fading in (fillAlpha / strokeAlpha) over the first 400ms
       - patty + lettuce fade    -> fillAlpha / strokeAlpha (groups have no opacity in AVDs)
       - sesame seed pop         -> strokeWidth 0 -> 3 -> 2
     Splash version of avd_ryori_burger: starts from the hidden state (the splash plays it once from
@@ -42,6 +43,9 @@
                     android:strokeColor="#92400E"
                     android:strokeWidth="1.2"
                     android:strokeLineJoin="round"
+                    android:name="top_bun_body"
+                    android:fillAlpha="0"
+                    android:strokeAlpha="0"
                     android:pathData="M27.8,14C26.9,8.3,21.9,4,16,4S5.1,8.3,4.2,14H27.8z" />
                 <path
                     android:name="seed_center"
@@ -89,6 +93,9 @@
                     android:strokeColor="#92400E"
                     android:strokeWidth="1.2"
                     android:strokeLineJoin="round"
+                    android:name="bottom_bun_top"
+                    android:fillAlpha="0"
+                    android:strokeAlpha="0"
                     android:pathData="M27,24H5c-1.1,0-2-0.9-2-2v0c0-1.1,0.9-2,2-2h22c1.1,0,2,0.9,2,2v0C29,23.1,28.1,24,27,24z" />
                 <path
                     android:fillColor="#CF7A08"
@@ -96,6 +103,9 @@
                     android:strokeWidth="1.2"
                     android:strokeLineCap="round"
                     android:strokeLineJoin="round"
+                    android:name="bottom_bun_base"
+                    android:fillAlpha="0"
+                    android:strokeAlpha="0"
                     android:pathData="M27,24v1.4c0,1.5-1.2,2.6-2.6,2.6H7.6C6.2,28,5,26.8,5,25.4V24" />
             </group>
 
@@ -138,6 +148,63 @@
                     android:valueFrom="-1.2"
                     android:valueTo="0"
                     android:duration="175"
+                    android:interpolator="@interpolator/ryori_ease" />
+            </set>
+        </aapt:attr>
+    </target>
+
+    <!-- Buns fade in as they move: fully shown 400ms into the 525ms drop / rise, before the
+         overshoot settles. Fill and stroke together (paths have no single opacity). -->
+    <target android:name="top_bun_body">
+        <aapt:attr name="android:animation">
+            <set android:ordering="together">
+                <objectAnimator
+                    android:propertyName="fillAlpha"
+                    android:valueFrom="0"
+                    android:valueTo="1"
+                    android:duration="400"
+                    android:interpolator="@interpolator/ryori_ease" />
+                <objectAnimator
+                    android:propertyName="strokeAlpha"
+                    android:valueFrom="0"
+                    android:valueTo="1"
+                    android:duration="400"
+                    android:interpolator="@interpolator/ryori_ease" />
+            </set>
+        </aapt:attr>
+    </target>
+    <target android:name="bottom_bun_top">
+        <aapt:attr name="android:animation">
+            <set android:ordering="together">
+                <objectAnimator
+                    android:propertyName="fillAlpha"
+                    android:valueFrom="0"
+                    android:valueTo="1"
+                    android:duration="400"
+                    android:interpolator="@interpolator/ryori_ease" />
+                <objectAnimator
+                    android:propertyName="strokeAlpha"
+                    android:valueFrom="0"
+                    android:valueTo="1"
+                    android:duration="400"
+                    android:interpolator="@interpolator/ryori_ease" />
+            </set>
+        </aapt:attr>
+    </target>
+    <target android:name="bottom_bun_base">
+        <aapt:attr name="android:animation">
+            <set android:ordering="together">
+                <objectAnimator
+                    android:propertyName="fillAlpha"
+                    android:valueFrom="0"
+                    android:valueTo="1"
+                    android:duration="400"
+                    android:interpolator="@interpolator/ryori_ease" />
+                <objectAnimator
+                    android:propertyName="strokeAlpha"
+                    android:valueFrom="0"
+                    android:valueTo="1"
+                    android:duration="400"
                     android:interpolator="@interpolator/ryori_ease" />
             </set>
         </aapt:attr>

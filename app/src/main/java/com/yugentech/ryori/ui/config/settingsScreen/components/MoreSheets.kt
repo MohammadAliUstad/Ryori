@@ -1,5 +1,6 @@
 package com.yugentech.ryori.ui.config.settingsScreen.components
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -17,8 +18,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetValue
@@ -40,7 +44,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -49,26 +54,23 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.yugentech.ryori.data.settings.SettingsRepository
-import com.yugentech.ryori.theme.service.HapticService
 import com.yugentech.ryori.theme.tokens.corners
 import com.yugentech.ryori.ui.main.mainScreen.components.RyoriDialog
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
-import org.koin.compose.koinInject
 
 // --- Name --------------------------------------------------------------------------------
 
 // Same sheet Quill uses to rename a category: drag handle, bold title, a filled text field
 // that gets focus once the sheet is open, and Cancel / Save aligned to the end.
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun EditNameSheet(
     currentName: String,
     onSave: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val haptic = koinInject<HapticService>()
-    val view = LocalView.current
+    val haptic = LocalHapticFeedback.current
 
     var textFieldValue by remember {
         mutableStateOf(
@@ -85,8 +87,24 @@ fun EditNameSheet(
     val currentText = textFieldValue.text
     val canSave = currentText.isNotBlank() && currentText.trim() != currentName
 
+    // Save eases between its disabled and enabled colours instead of snapping, on the theme's
+    // effects spring (no bounce). Both states get the same animated colour, so the button's own
+    // enabled/disabled switch can't cut the animation short.
+    val defaultSaveColors = ButtonDefaults.buttonColors()
+    val colorSpec = MaterialTheme.motionScheme.defaultEffectsSpec<Color>()
+    val saveContainerColor by animateColorAsState(
+        targetValue = if (canSave) defaultSaveColors.containerColor else defaultSaveColors.disabledContainerColor,
+        animationSpec = colorSpec,
+        label = "saveContainer"
+    )
+    val saveContentColor by animateColorAsState(
+        targetValue = if (canSave) defaultSaveColors.contentColor else defaultSaveColors.disabledContentColor,
+        animationSpec = colorSpec,
+        label = "saveContent"
+    )
+
     val save = {
-        haptic.performHaptic(view)
+        haptic.performHapticFeedback(HapticFeedbackType.Confirm)
         onSave(currentText.trim())
     }
 
@@ -175,16 +193,18 @@ fun EditNameSheet(
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TextButton(
-                    onClick = {
-                        haptic.performHaptic(view)
-                        onDismiss()
-                    }
-                ) { Text("Cancel") }
+                // No haptic on Cancel: like every dialog, only the action button gives feedback.
+                TextButton(onClick = onDismiss) { Text("Cancel") }
                 Spacer(modifier = Modifier.width(8.dp))
                 Button(
                     onClick = save,
-                    enabled = canSave
+                    enabled = canSave,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = saveContainerColor,
+                        contentColor = saveContentColor,
+                        disabledContainerColor = saveContainerColor,
+                        disabledContentColor = saveContentColor
+                    )
                 ) { Text("Save") }
             }
         }
@@ -193,10 +213,12 @@ fun EditNameSheet(
 
 // --- Confirmations ---------------------------------------------------------------------------
 
-// Confirms an action, then closes itself. destructive = true for clear / delete style actions.
+// Confirms an action, then closes itself. The same dialog Sessions uses to delete a session or
+// template: a plain Material alert with the title and message at the start, and a text "Cancel"
+// beside a solid action button at the end. destructive = true (clear, delete) makes the action red.
+// The action button gives a Confirm haptic; Cancel and tapping outside give none.
 @Composable
 fun ConfirmDialog(
-    icon: ImageVector,
     title: String,
     message: String,
     confirmLabel: String,
@@ -204,16 +226,43 @@ fun ConfirmDialog(
     onDismiss: () -> Unit,
     destructive: Boolean = false
 ) {
-    RyoriDialog(
-        icon = icon,
-        title = title,
-        message = message,
-        confirmLabel = confirmLabel,
-        destructive = destructive,
-        onConfirm = {
-            onConfirm()
-            onDismiss()
+    val haptic = LocalHapticFeedback.current
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title, style = MaterialTheme.typography.headlineSmall) },
+        text = {
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         },
-        onDismiss = onDismiss
+        shape = RoundedCornerShape(MaterialTheme.corners.large),
+        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        confirmButton = {
+            Button(
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+                    onConfirm()
+                    onDismiss()
+                },
+                colors = if (destructive) {
+                    ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    )
+                } else {
+                    ButtonDefaults.buttonColors()
+                }
+            ) {
+                Text(confirmLabel)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
     )
 }

@@ -32,13 +32,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.yugentech.ryori.R
 import com.yugentech.ryori.api.viewmodel.MoreViewModel
-import com.yugentech.ryori.theme.service.HapticService
 import com.yugentech.ryori.theme.tokens.spacing
 import com.yugentech.ryori.ui.config.aboutScreen.components.ExitConfirmationDialog
+import com.yugentech.ryori.ui.config.moreAppsScreen.MoreFromUsSheet
 import com.yugentech.ryori.ui.config.settingsScreen.components.ChefCard
 import com.yugentech.ryori.ui.config.settingsScreen.components.ConfirmDialog
 import com.yugentech.ryori.ui.config.settingsScreen.components.EditNameSheet
@@ -47,10 +50,9 @@ import com.yugentech.ryori.ui.config.settingsScreen.components.SettingsSwitchIte
 import com.yugentech.ryori.ui.main.mainScreen.components.SectionHeader
 import com.yugentech.ryori.ui.main.mainScreen.components.ToastMessage
 import org.koin.androidx.compose.koinViewModel
-import org.koin.compose.koinInject
 
 // Which sheet or dialog is open. Saved by name so it survives rotation.
-private enum class MoreOverlay { NONE, NAME, CLEAR_CACHE, CLEAR_RECENT, EXIT }
+private enum class MoreOverlay { NONE, NAME, CLEAR_CACHE, CLEAR_RECENT, EXIT, MORE_APPS }
 
 private data class AboutRow(val title: String, val subtitle: String, val onClick: () -> Unit)
 
@@ -61,6 +63,7 @@ fun MoreScreen(
     onAppearance: () -> Unit,
     onRecentlyViewed: () -> Unit,
     onWhatsNew: () -> Unit,
+    onMoreApps: () -> Unit,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     viewModel: MoreViewModel = koinViewModel()
 ) {
@@ -68,8 +71,7 @@ fun MoreScreen(
     val notice by viewModel.notice.collectAsState()
     val settings = uiState.settings
     val context = LocalContext.current
-    val haptic = koinInject<HapticService>()
-    val view = LocalView.current
+    val haptic = LocalHapticFeedback.current
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     var overlayName by rememberSaveable { mutableStateOf(MoreOverlay.NONE.name) }
@@ -77,15 +79,16 @@ fun MoreScreen(
     val show: (MoreOverlay) -> Unit = { overlayName = it.name }
     val dismiss: () -> Unit = { overlayName = MoreOverlay.NONE.name }
 
-    // Switch rows: a tick of feedback, then the change.
+    // Switch rows: a toggle-on or toggle-off pulse, then the change.
     val toggle: (Boolean, (Boolean) -> Unit) -> Unit = { value, set ->
-        haptic.performTickHaptic(view)
+        haptic.performHapticFeedback(if (value) HapticFeedbackType.ToggleOn else HapticFeedbackType.ToggleOff)
         set(value)
     }
 
     val aboutRows = listOf(
-        AboutRow("About Ryori", "Version info and the people behind it", onAbout),
-        AboutRow("What's There", "Everything Ryori can do", onWhatsNew)
+        AboutRow("About Ryori", stringResource(R.string.version), onAbout),
+        AboutRow("What's There", "Everything Ryori can do", onWhatsNew),
+        AboutRow("More from us", "Explore our other apps") { show(MoreOverlay.MORE_APPS) }
     )
 
     Scaffold(
@@ -94,7 +97,7 @@ fun MoreScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "More",
+                        text = "Settings",
                         style = MaterialTheme.typography.headlineLarge,
                         fontWeight = FontWeight.Bold
                     )
@@ -263,7 +266,6 @@ fun MoreScreen(
         )
 
         MoreOverlay.CLEAR_CACHE -> ConfirmDialog(
-            icon = Icons.Outlined.CleaningServices,
             title = "Clear cache?",
             message = "Saved recipes and lists will be downloaded again next time you open them. Your stats and settings stay.",
             confirmLabel = "Clear",
@@ -273,7 +275,6 @@ fun MoreScreen(
         )
 
         MoreOverlay.CLEAR_RECENT -> ConfirmDialog(
-            icon = Icons.Outlined.DeleteSweep,
             title = "Clear recently viewed?",
             message = "This empties your recently viewed list. Your kitchen stats stay as they are.",
             confirmLabel = "Clear",
@@ -285,6 +286,11 @@ fun MoreScreen(
         MoreOverlay.EXIT -> ExitConfirmationDialog(
             onConfirm = { (context as? ComponentActivity)?.finish() },
             onDismiss = dismiss
+        )
+
+        MoreOverlay.MORE_APPS -> MoreFromUsSheet(
+            onDismiss = dismiss,
+            onSeeAll = onMoreApps
         )
 
         MoreOverlay.NONE -> Unit

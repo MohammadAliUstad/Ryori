@@ -85,9 +85,11 @@ fun AppInfoCard() {
                     ) { playBurger() },
                 contentAlignment = Alignment.Center
             ) {
+                // The drawable has a margin round the burger, so it fills the tile and the buns
+                // slide in from the tile's edges (the burger itself is still 64dp).
                 AnimatedRyoriIcon(
                     isAnimating = isAnimating,
-                    modifier = Modifier.requiredSize(64.dp)
+                    modifier = Modifier.requiredSize(88.dp)
                 )
             }
 

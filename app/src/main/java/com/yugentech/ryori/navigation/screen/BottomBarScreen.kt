@@ -4,9 +4,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
 
 sealed class BottomBarScreen(
@@ -22,18 +24,20 @@ sealed class BottomBarScreen(
         unselectedIcon = Icons.Outlined.Home
     )
 
+    // The Explore tab (still "Search" in code and routes; shown as "Explore").
     data object Search : BottomBarScreen(
         route = AppScreen.Search.route,
-        title = "Search",
+        title = "Explore",
         selectedIcon = Icons.Filled.Search,
         unselectedIcon = Icons.Outlined.Search
     )
 
+    // The settings tab (still "More" in code and routes; shown as "Settings").
     data object More : BottomBarScreen(
         route = AppScreen.More.route,
-        title = "More",
-        selectedIcon = Icons.Filled.Apps,
-        unselectedIcon = Icons.Outlined.Apps
+        title = "Settings",
+        selectedIcon = Icons.Filled.Settings,
+        unselectedIcon = Icons.Outlined.Settings
     )
 
     companion object {

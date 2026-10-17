@@ -27,21 +27,11 @@ fun themeOptions(
         )
     ),
 
-    // Sakura (Pink/Red)
-    ThemeOption(
-        colorTheme = ColorTheme.SAKURA,
-        displayName = "Sakura",
-        primaryColor = AppColorSchemes.SakuraLightColorScheme.primary,
-        gradientColors = listOf(
-            AppColorSchemes.SakuraLightColorScheme.primary,
-            AppColorSchemes.SakuraLightColorScheme.primaryContainer
-        )
-    ),
-
-    // Canyon (Brown/Orange)
+    // Ryori (Brown/Orange): the app's own theme and the default, right after Dynamic. Stored as
+    // CANYON, its old name, so a saved choice carries over.
     ThemeOption(
         colorTheme = ColorTheme.CANYON,
-        displayName = "Canyon",
+        displayName = "Ryori",
         primaryColor = AppColorSchemes.CanyonLightColorScheme.primary,
         gradientColors = listOf(
             AppColorSchemes.CanyonLightColorScheme.primary,
@@ -49,14 +39,14 @@ fun themeOptions(
         )
     ),
 
-    // Harvest (Gold/Yellow)
+    // Lagoon (Cyan/Teal)
     ThemeOption(
-        colorTheme = ColorTheme.HARVEST,
-        displayName = "Harvest",
-        primaryColor = AppColorSchemes.HarvestLightColorScheme.primary,
+        colorTheme = ColorTheme.LAGOON,
+        displayName = "Lagoon",
+        primaryColor = AppColorSchemes.LagoonLightColorScheme.primary,
         gradientColors = listOf(
-            AppColorSchemes.HarvestLightColorScheme.primary,
-            AppColorSchemes.HarvestLightColorScheme.primaryContainer
+            AppColorSchemes.LagoonLightColorScheme.primary,
+            AppColorSchemes.LagoonLightColorScheme.primaryContainer
         )
     ),
 
@@ -71,6 +61,28 @@ fun themeOptions(
         )
     ),
 
+    // Harvest (Gold/Yellow)
+    ThemeOption(
+        colorTheme = ColorTheme.HARVEST,
+        displayName = "Harvest",
+        primaryColor = AppColorSchemes.HarvestLightColorScheme.primary,
+        gradientColors = listOf(
+            AppColorSchemes.HarvestLightColorScheme.primary,
+            AppColorSchemes.HarvestLightColorScheme.primaryContainer
+        )
+    ),
+
+    // Sakura (Pink/Red)
+    ThemeOption(
+        colorTheme = ColorTheme.SAKURA,
+        displayName = "Sakura",
+        primaryColor = AppColorSchemes.SakuraLightColorScheme.primary,
+        gradientColors = listOf(
+            AppColorSchemes.SakuraLightColorScheme.primary,
+            AppColorSchemes.SakuraLightColorScheme.primaryContainer
+        )
+    ),
+
     // Alpine (Deep Green/Forest)
     ThemeOption(
         colorTheme = ColorTheme.ALPINE,
@@ -79,17 +91,6 @@ fun themeOptions(
         gradientColors = listOf(
             AppColorSchemes.AlpineLightColorScheme.primary,
             AppColorSchemes.AlpineLightColorScheme.primaryContainer
-        )
-    ),
-
-    // Lagoon (Cyan/Teal)
-    ThemeOption(
-        colorTheme = ColorTheme.LAGOON,
-        displayName = "Lagoon",
-        primaryColor = AppColorSchemes.LagoonLightColorScheme.primary,
-        gradientColors = listOf(
-            AppColorSchemes.LagoonLightColorScheme.primary,
-            AppColorSchemes.LagoonLightColorScheme.primaryContainer
         )
     ),
 

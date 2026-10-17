@@ -23,6 +23,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.window.DialogProperties
 import com.yugentech.ryori.theme.tokens.corners
@@ -32,11 +34,13 @@ import com.yugentech.ryori.theme.tokens.spacing
 
 // Every dialog in Ryori, in the same design as Sessions: a rounded card with a large icon,
 // a centered title and message, then a text "Cancel" next to a solid action button.
+// Without an icon, the title and message sit at the start instead.
 // destructive = true (clear, delete...) switches the icon and action button to error colours.
+// The action button gives a Confirm haptic; Cancel and tapping outside give none.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RyoriDialog(
-    icon: ImageVector,
+    icon: ImageVector?,
     title: String,
     confirmLabel: String,
     onConfirm: () -> Unit,
@@ -49,6 +53,8 @@ fun RyoriDialog(
 ) {
     val accent = if (destructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
     val onAccent = if (destructive) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onPrimary
+    val textAlign = if (icon != null) TextAlign.Center else TextAlign.Start
+    val haptic = LocalHapticFeedback.current
 
     BasicAlertDialog(
         onDismissRequest = onDismiss,
@@ -70,22 +76,24 @@ fun RyoriDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(MaterialTheme.spacing.l),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = if (icon != null) Alignment.CenterHorizontally else Alignment.Start
                 ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        modifier = Modifier.size(MaterialTheme.icons.extraLarge),
-                        tint = accent
-                    )
+                    if (icon != null) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            modifier = Modifier.size(MaterialTheme.icons.extraLarge),
+                            tint = accent
+                        )
 
-                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.m))
+                        Spacer(modifier = Modifier.height(MaterialTheme.spacing.m))
+                    }
 
                     Text(
                         text = title,
                         style = MaterialTheme.typography.headlineSmall,
                         color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Center
+                        textAlign = textAlign
                     )
 
                     if (message != null) {
@@ -95,7 +103,7 @@ fun RyoriDialog(
                             text = message,
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
+                            textAlign = textAlign
                         )
                     }
 
@@ -122,7 +130,10 @@ fun RyoriDialog(
                         }
 
                         Button(
-                            onClick = onConfirm,
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+                                onConfirm()
+                            },
                             enabled = confirmEnabled,
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(

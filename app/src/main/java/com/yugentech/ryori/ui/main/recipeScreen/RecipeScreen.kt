@@ -95,7 +95,8 @@ import com.yugentech.ryori.api.model.domain.RecipeSummary
 import com.yugentech.ryori.api.model.domain.RecipeType
 import com.yugentech.ryori.api.viewmodel.RecipeUiState
 import com.yugentech.ryori.api.viewmodel.RecipeViewModel
-import com.yugentech.ryori.theme.service.HapticService
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import com.yugentech.ryori.theme.tokens.corners
 import com.yugentech.ryori.theme.tokens.spacing
 import com.yugentech.ryori.ui.main.mainScreen.components.ErrorState
@@ -104,7 +105,6 @@ import com.yugentech.ryori.ui.main.mainScreen.components.SectionHeader
 import com.yugentech.ryori.ui.main.mainScreen.components.itemShape
 import com.yugentech.ryori.ui.main.mainScreen.components.rowItemShape
 import org.koin.androidx.compose.koinViewModel
-import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -192,10 +192,10 @@ private fun RecipeContent(
     val uriHandler = LocalUriHandler.current
     val horizontal = Modifier.padding(horizontal = MaterialTheme.spacing.m)
 
+    // No extra bottom padding: the list ends with just the navigation bar's height (nav_bar_space).
     LazyColumn(
         state = listState,
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = MaterialTheme.spacing.s)
+        modifier = Modifier.fillMaxSize()
     ) {
         item(key = "hero") { Hero(recipe) }
 
@@ -383,8 +383,7 @@ private fun InfoChip(
     content: Color,
     onClick: (() -> Unit)? = null
 ) {
-    val haptic = koinInject<HapticService>()
-    val view = LocalView.current
+    val haptic = LocalHapticFeedback.current
     val shape = RoundedCornerShape(MaterialTheme.corners.pill)
 
     // Every chip gets the same fixed height with its text centred. Tappable ones use a
@@ -401,7 +400,7 @@ private fun InfoChip(
             .then(
                 if (onClick != null) {
                     Modifier.clickable {
-                        haptic.performHaptic(view)
+                        haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
                         onClick()
                     }
                 } else Modifier
@@ -502,12 +501,11 @@ private fun IngredientRow(
     onToggle: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val haptic = koinInject<HapticService>()
-    val view = LocalView.current
+    val haptic = LocalHapticFeedback.current
 
     Surface(
         onClick = {
-            haptic.performHaptic(view)
+            haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
             onToggle()
         },
         shape = shape,

@@ -1,5 +1,6 @@
 package com.yugentech.ryori.ui.main.mainScreen.components
 
+import android.os.SystemClock
 import androidx.annotation.DrawableRes
 import androidx.annotation.RawRes
 import androidx.compose.animation.graphics.res.animatedVectorResource
@@ -14,6 +15,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.semantics.contentDescription
@@ -28,10 +34,11 @@ import com.airbnb.lottie.compose.rememberLottieDynamicProperties
 import com.airbnb.lottie.compose.rememberLottieDynamicProperty
 import com.yugentech.ryori.R
 import com.yugentech.ryori.navigation.screen.BottomBarScreen
+import kotlinx.coroutines.delay
 
 // Same setup as Quill's BottomBar: default Material NavigationBar colors and label styling,
 // and re-tapping the current tab does nothing. Home and Search use Lordicon Lottie icons that
-// play their "pinch" once when the tab is selected; More uses Quill's animated More icon.
+// play their "pinch" once when the tab is selected; Settings uses Sessions' animated gear.
 @Composable
 fun BottomNavBar(
     currentTab: BottomBarScreen,
@@ -57,8 +64,9 @@ fun BottomNavBar(
                             contentDescription = screen.title
                         )
 
-                        BottomBarScreen.More -> AnimatedNavIcon(
-                            avdRes = R.drawable.avd_nav_more,
+                        // Sessions' settings gear, played once on selection like Home and Search.
+                        BottomBarScreen.More -> LottieNavIcon(
+                            rawRes = R.raw.lottie_nav_settings,
                             selected = isSelected,
                             contentDescription = screen.title
                         )
@@ -82,9 +90,17 @@ private fun LottieNavIcon(
     val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(rawRes))
     val animatable = rememberLottieAnimatable()
 
-    LaunchedEffect(selected, composition) {
-        if (selected && composition != null) {
-            animatable.animate(composition, iterations = 1)
+    // As in Sessions' nav bar: selecting the tab starts a play, and nothing but a new selection
+    // restarts it. Tapping another tab straight away doesn't cancel it, so it always finishes on
+    // its resting pose instead of freezing mid-way.
+    var plays by remember { mutableIntStateOf(0) }
+    LaunchedEffect(selected) {
+        if (selected) plays++
+    }
+    LaunchedEffect(plays, composition) {
+        val loaded = composition
+        if (plays > 0 && loaded != null) {
+            animatable.animate(loaded, iterations = 1)
         }
     }
 
@@ -104,7 +120,9 @@ private fun LottieNavIcon(
     )
 }
 
-// Quill's approach: the AVD runs forward when the tab becomes selected.
+// The AVD runs forward when the tab becomes selected and back when it's left. Each run gets its
+// full length before the next starts (as Sessions lets its icons finish): tapping away straight
+// after selecting lets the forward animation complete, then it plays back to rest.
 @Composable
 private fun AnimatedNavIcon(
     @DrawableRes avdRes: Int,
@@ -112,10 +130,21 @@ private fun AnimatedNavIcon(
     contentDescription: String
 ) {
     val image = AnimatedImageVector.animatedVectorResource(avdRes)
+    var atEnd by remember { mutableStateOf(selected) }
+    var lastRunStart by remember { mutableLongStateOf(0L) }
+
+    LaunchedEffect(selected) {
+        if (atEnd == selected) return@LaunchedEffect
+        val remaining = image.totalDuration - (SystemClock.uptimeMillis() - lastRunStart)
+        if (remaining > 0) delay(remaining)
+        atEnd = selected
+        lastRunStart = SystemClock.uptimeMillis()
+    }
+
     Icon(
         painter = rememberAnimatedVectorPainter(
             animatedImageVector = image,
-            atEnd = selected
+            atEnd = atEnd
         ),
         contentDescription = contentDescription
     )

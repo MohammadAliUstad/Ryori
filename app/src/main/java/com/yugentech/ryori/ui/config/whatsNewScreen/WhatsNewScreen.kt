@@ -172,39 +172,6 @@ fun WhatsNewScreen(onNavigateBack: () -> Unit) {
             ),
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs)
         ) {
-            item {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.m),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = MaterialTheme.spacing.s)
-                        .clip(RoundedCornerShape(MaterialTheme.corners.extraLarge))
-                        .background(MaterialTheme.colorScheme.primaryContainer)
-                        .padding(MaterialTheme.spacing.m)
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.NewReleases,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(32.dp)
-                    )
-                    Column {
-                        Text(
-                            text = "Welcome to Ryori",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Text(
-                            text = "Here's everything you can cook up with Ryori.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-                }
-            }
-
             itemsIndexed(whatsNew) { index, item ->
                 Row(
                     verticalAlignment = Alignment.CenterVertically,

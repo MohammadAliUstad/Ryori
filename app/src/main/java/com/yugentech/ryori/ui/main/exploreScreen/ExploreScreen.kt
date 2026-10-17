@@ -1,6 +1,8 @@
 package com.yugentech.ryori.ui.main.exploreScreen
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
@@ -98,10 +100,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.yugentech.ryori.api.error.AppError
@@ -115,17 +119,17 @@ import com.yugentech.ryori.api.model.domain.RecipeSummary
 import com.yugentech.ryori.api.model.domain.RecipeType
 import com.yugentech.ryori.api.viewmodel.ExploreUiState
 import com.yugentech.ryori.api.viewmodel.ExploreViewModel
-import com.yugentech.ryori.theme.service.HapticService
 import com.yugentech.ryori.theme.tokens.corners
 import com.yugentech.ryori.theme.tokens.spacing
 import com.yugentech.ryori.ui.main.mainScreen.components.ErrorState
 import com.yugentech.ryori.ui.main.mainScreen.components.RecipeCard
 import com.yugentech.ryori.ui.main.mainScreen.components.RecipeCardRow
+import com.yugentech.ryori.ui.main.mainScreen.components.RecipeCardRowPlaceholder
 import com.yugentech.ryori.ui.main.mainScreen.components.SectionHeader
 import com.yugentech.ryori.ui.main.mainScreen.components.ToastMessage
+import com.yugentech.ryori.ui.main.mainScreen.components.rememberShimmerColor
 import com.yugentech.ryori.ui.main.mainScreen.components.rowItemShape
 import org.koin.androidx.compose.koinViewModel
-import org.koin.compose.koinInject
 import androidx.compose.foundation.lazy.grid.items as gridItems
 
 // Same setup as Quill's Discover screen: the content scrolls under a floating, frosted
@@ -172,19 +176,15 @@ fun ExploreScreen(
     ) {
         // --- The scrolling content (the haze source the search bar blurs) ---
         AnimatedContent(
-            // Paired with the error so the error screen keeps its message while it fades out after
-            // "Try again" (the view model clears the error straight away).
-            targetState = when {
-                uiState.isLoading -> ExploreMode.Loading
-                uiState.error != null -> ExploreMode.Error
-                else -> ExploreMode.Browse
-            } to uiState.error,
+            // The sections are on screen from the first frame, with skeletons standing in for
+            // anything still loading. Only a load that brings back nothing swaps to the error
+            // screen. Paired with the error so the error screen keeps its message while it fades
+            // out after "Try again" (the view model clears the error straight away).
+            targetState = (if (uiState.error != null) ExploreMode.Error else ExploreMode.Browse) to uiState.error,
             transitionSpec = { fadeIn() togetherWith fadeOut() },
             label = "ExploreMode"
         ) { (mode, shownError) ->
             when (mode) {
-                ExploreMode.Loading -> CenteredLoading()
-
                 ExploreMode.Error -> ErrorState(
                     error = shownError ?: AppError.UNKNOWN,
                     onRetry = viewModel::load
@@ -329,7 +329,7 @@ fun ExploreScreen(
     }
 }
 
-private enum class ExploreMode { Loading, Error, Browse }
+private enum class ExploreMode { Error, Browse }
 
 // Shown in the expanded search before anything is typed, like Discover's suggestions.
 private val searchSuggestions = listOf(
@@ -345,6 +345,7 @@ private val searchSuggestions = listOf(
 
 @Composable
 private fun SearchSuggestions(onSuggestionClick: (String) -> Unit) {
+    val haptic = LocalHapticFeedback.current
     LazyColumn(
         contentPadding = PaddingValues(MaterialTheme.spacing.m),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.s)
@@ -355,7 +356,10 @@ private fun SearchSuggestions(onSuggestionClick: (String) -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(MaterialTheme.corners.medium))
-                    .clickable { onSuggestionClick(name) }
+                    .clickable {
+                        haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
+                        onSuggestionClick(name)
+                    }
                     .padding(vertical = 12.dp, horizontal = MaterialTheme.spacing.s)
             ) {
                 Icon(
@@ -428,7 +432,12 @@ private fun BrowseSections(
     modifier: Modifier = Modifier
 ) {
     val horizontalPadding = PaddingValues(horizontal = MaterialTheme.spacing.m)
+    // One pulse for every skeleton, so they all breathe together.
+    val shimmer = rememberShimmerColor()
 
+    // What needs no network (the surprise cards, the drink categories, A-Z) shows straight away.
+    // Each loaded section shows a skeleton the size of its content until its data is in, then
+    // fades to it; a section whose request failed is left out (the toast says why).
     LazyColumn(
         state = listState,
         contentPadding = contentPadding,
@@ -442,78 +451,107 @@ private fun BrowseSections(
             )
         }
 
-        if (uiState.categories.isNotEmpty()) {
+        if (uiState.categoriesLoading || uiState.categories.isNotEmpty()) {
             item { SectionHeader(icon = Icons.Rounded.Category, title = "Categories") }
             item {
-                LazyRow(
-                    contentPadding = horizontalPadding,
-                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.s)
-                ) {
-                    items(uiState.categories, key = { it.id }) { category ->
-                        CategoryTile(
-                            category = category,
-                            onClick = { category.name?.let { onBrowse(RecipeFilter.CATEGORY, it) } }
-                        )
+                SectionCrossfade(loading = uiState.categoriesLoading, label = "categories") { showPlaceholder ->
+                    if (showPlaceholder) {
+                        CategoryRowPlaceholder(contentPadding = horizontalPadding, shimmer = shimmer)
+                    } else {
+                        LazyRow(
+                            contentPadding = horizontalPadding,
+                            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.s)
+                        ) {
+                            items(uiState.categories, key = { it.id }) { category ->
+                                CategoryTile(
+                                    category = category,
+                                    onClick = { category.name?.let { onBrowse(RecipeFilter.CATEGORY, it) } }
+                                )
+                            }
+                        }
                     }
                 }
             }
         }
 
-        if (uiState.areas.isNotEmpty()) {
+        if (uiState.areasLoading || uiState.areas.isNotEmpty()) {
             item { SectionHeader(icon = Icons.Rounded.Public, title = "Cuisines") }
             item {
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.s),
-                    verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.s),
-                    modifier = Modifier.padding(horizontalPadding)
-                ) {
-                    uiState.areas.forEach { area ->
-                        CuisineChip(area = area, onClick = { onBrowse(RecipeFilter.AREA, area.name) })
+                SectionCrossfade(loading = uiState.areasLoading, label = "cuisines") { showPlaceholder ->
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.s),
+                        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.s),
+                        modifier = Modifier.padding(horizontalPadding)
+                    ) {
+                        if (showPlaceholder) {
+                            cuisinePlaceholderWidths.forEach { width -> PillPlaceholder(width = width, shimmer = shimmer) }
+                        } else {
+                            uiState.areas.forEach { area ->
+                                CuisineChip(area = area, onClick = { onBrowse(RecipeFilter.AREA, area.name) })
+                            }
+                        }
                     }
                 }
             }
         }
 
-        if (uiState.ingredients.isNotEmpty()) {
+        if (uiState.ingredientsLoading || uiState.ingredients.isNotEmpty()) {
             item { SectionHeader(icon = Icons.Rounded.Kitchen, title = "Cook With") }
             item {
-                LazyRow(
-                    contentPadding = horizontalPadding,
-                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.m)
-                ) {
-                    items(uiState.ingredients, key = { it.name }) { ingredient ->
-                        IngredientBubble(
-                            ingredient = ingredient,
-                            onClick = { onBrowse(RecipeFilter.INGREDIENT, ingredient.name) }
-                        )
+                SectionCrossfade(loading = uiState.ingredientsLoading, label = "ingredients") { showPlaceholder ->
+                    if (showPlaceholder) {
+                        IngredientRowPlaceholder(contentPadding = horizontalPadding, shimmer = shimmer)
+                    } else {
+                        LazyRow(
+                            contentPadding = horizontalPadding,
+                            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.m)
+                        ) {
+                            items(uiState.ingredients, key = { it.name }) { ingredient ->
+                                IngredientBubble(
+                                    ingredient = ingredient,
+                                    onClick = { onBrowse(RecipeFilter.INGREDIENT, ingredient.name) }
+                                )
+                            }
+                        }
                     }
                 }
             }
         }
 
-        if (uiState.drinks.isNotEmpty()) {
-            item { SectionHeader(icon = Icons.Rounded.LocalCafe, title = "Drinks & Mocktails") }
+        // The drink categories are fixed, so they show straight away; only the drinks row loads.
+        item { SectionHeader(icon = Icons.Rounded.LocalCafe, title = "Drinks & Mocktails") }
+        item {
+            LazyRow(
+                contentPadding = horizontalPadding,
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.s)
+            ) {
+                items(DrinkCategories.all, key = { it.first }) { (category, label) ->
+                    FilterPill(
+                        label = label,
+                        onClick = { onBrowse(RecipeFilter.DRINK_CATEGORY, category) }
+                    )
+                }
+            }
+        }
+        if (uiState.drinksLoading || uiState.drinks.isNotEmpty()) {
             item {
-                LazyRow(
-                    contentPadding = horizontalPadding,
-                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.s)
-                ) {
-                    items(DrinkCategories.all, key = { it.first }) { (category, label) ->
-                        FilterPill(
-                            label = label,
-                            onClick = { onBrowse(RecipeFilter.DRINK_CATEGORY, category) }
+                SectionCrossfade(loading = uiState.drinksLoading, label = "drinks") { showPlaceholder ->
+                    if (showPlaceholder) {
+                        RecipeCardRowPlaceholder(
+                            contentPadding = horizontalPadding,
+                            shimmer = shimmer,
+                            modifier = Modifier.padding(top = MaterialTheme.spacing.s)
+                        )
+                    } else {
+                        RecipeCardRow(
+                            recipes = uiState.drinks,
+                            onClick = onRecipeClick,
+                            contentPadding = horizontalPadding,
+                            modifier = Modifier.padding(top = MaterialTheme.spacing.s),
+                            trailing = { SeeAllTile(onClick = { onBrowse(RecipeFilter.DRINKS, "all") }) }
                         )
                     }
                 }
-            }
-            item {
-                RecipeCardRow(
-                    recipes = uiState.drinks,
-                    onClick = onRecipeClick,
-                    contentPadding = horizontalPadding,
-                    modifier = Modifier.padding(top = MaterialTheme.spacing.s),
-                    trailing = { SeeAllTile(onClick = { onBrowse(RecipeFilter.DRINKS, "all") }) }
-                )
             }
         }
 
@@ -583,12 +621,11 @@ private fun SurpriseCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val haptic = koinInject<HapticService>()
-    val view = LocalView.current
+    val haptic = LocalHapticFeedback.current
 
     Card(
         onClick = {
-            haptic.performHaptic(view)
+            haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
             onClick()
         },
         shape = shape,
@@ -624,12 +661,11 @@ private fun SurpriseCard(
 
 @Composable
 private fun CategoryTile(category: Category, onClick: () -> Unit) {
-    val haptic = koinInject<HapticService>()
-    val view = LocalView.current
+    val haptic = LocalHapticFeedback.current
 
     Card(
         onClick = {
-            haptic.performHaptic(view)
+            haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
             onClick()
         },
         shape = RoundedCornerShape(MaterialTheme.corners.large),
@@ -669,12 +705,11 @@ private fun CuisineChip(area: Area, onClick: () -> Unit) {
 
 @Composable
 private fun FilterPill(label: String, onClick: () -> Unit) {
-    val haptic = koinInject<HapticService>()
-    val view = LocalView.current
+    val haptic = LocalHapticFeedback.current
 
     Surface(
         onClick = {
-            haptic.performHaptic(view)
+            haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
             onClick()
         },
         shape = RoundedCornerShape(MaterialTheme.corners.pill),
@@ -691,8 +726,7 @@ private fun FilterPill(label: String, onClick: () -> Unit) {
 
 @Composable
 private fun IngredientBubble(ingredient: IngredientInfo, onClick: () -> Unit) {
-    val haptic = koinInject<HapticService>()
-    val view = LocalView.current
+    val haptic = LocalHapticFeedback.current
 
     // The tap area is rounded, so its content is inset from the edges: without the inner
     // padding the rounded corners clipped the ends of longer ingredient names.
@@ -702,7 +736,7 @@ private fun IngredientBubble(ingredient: IngredientInfo, onClick: () -> Unit) {
             .width(84.dp)
             .clip(RoundedCornerShape(MaterialTheme.corners.medium))
             .clickable {
-                haptic.performHaptic(view)
+                haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
                 onClick()
             }
             .padding(horizontal = MaterialTheme.spacing.xs, vertical = MaterialTheme.spacing.xs)
@@ -751,12 +785,11 @@ private fun SeeAllTile(onClick: () -> Unit) {
 
 @Composable
 private fun LetterButton(letter: Char, onClick: () -> Unit) {
-    val haptic = koinInject<HapticService>()
-    val view = LocalView.current
+    val haptic = LocalHapticFeedback.current
 
     Surface(
         onClick = {
-            haptic.performHaptic(view)
+            haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
             onClick()
         },
         shape = CircleShape,
@@ -772,6 +805,129 @@ private fun LetterButton(letter: Char, onClick: () -> Unit) {
         }
     }
 }
+
+// --- Loading skeletons ------------------------------------------------------------------------
+
+// How long a skeleton takes to fade into its loaded content (the same as Home's).
+private const val EXPLORE_REVEAL_MILLIS = 400
+
+// Fades a section from its skeleton (content(true)) to its loaded content (content(false)).
+@Composable
+private fun SectionCrossfade(
+    loading: Boolean,
+    label: String,
+    content: @Composable (showPlaceholder: Boolean) -> Unit
+) {
+    Crossfade(
+        targetState = loading,
+        animationSpec = tween(EXPLORE_REVEAL_MILLIS),
+        label = label
+    ) { showPlaceholder -> content(showPlaceholder) }
+}
+
+// Same as the categories LazyRow: CategoryTile's 128dp card, its padding, the 1.3 image and one
+// line of label, with the row's spacing. Not scrollable while loading.
+@Composable
+private fun CategoryRowPlaceholder(contentPadding: PaddingValues, shimmer: Color) {
+    LazyRow(
+        contentPadding = contentPadding,
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.s),
+        userScrollEnabled = false
+    ) {
+        items(CATEGORY_PLACEHOLDER_COUNT) {
+            Card(
+                shape = RoundedCornerShape(MaterialTheme.corners.large),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                modifier = Modifier.width(128.dp)
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(MaterialTheme.spacing.s)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(1.3f)
+                            .clip(RoundedCornerShape(MaterialTheme.corners.medium))
+                            .background(shimmer)
+                    )
+                    // An empty Text in the label's style takes exactly one label line of height.
+                    Text(
+                        text = "",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier
+                            .padding(top = MaterialTheme.spacing.xs)
+                            .fillMaxWidth(0.6f)
+                            .clip(RoundedCornerShape(MaterialTheme.corners.small))
+                            .background(shimmer)
+                    )
+                }
+            }
+        }
+    }
+}
+
+// The same height as FilterPill (one labelLarge line plus its 8dp top and bottom padding), at a
+// given width.
+@Composable
+private fun PillPlaceholder(width: Dp, shimmer: Color) {
+    Text(
+        text = "",
+        style = MaterialTheme.typography.labelLarge,
+        modifier = Modifier
+            .clip(RoundedCornerShape(MaterialTheme.corners.pill))
+            .background(shimmer)
+            .padding(horizontal = 14.dp, vertical = 8.dp)
+            .width(width)
+    )
+}
+
+// Same as the ingredients LazyRow: IngredientBubble's 84dp column, 68dp circle and one line of
+// label, with the row's spacing.
+@Composable
+private fun IngredientRowPlaceholder(contentPadding: PaddingValues, shimmer: Color) {
+    LazyRow(
+        contentPadding = contentPadding,
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.m),
+        userScrollEnabled = false
+    ) {
+        items(INGREDIENT_PLACEHOLDER_COUNT) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .width(84.dp)
+                    .padding(horizontal = MaterialTheme.spacing.xs, vertical = MaterialTheme.spacing.xs)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(68.dp)
+                        .clip(CircleShape)
+                        .background(shimmer)
+                )
+                Text(
+                    text = "",
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier
+                        .padding(top = MaterialTheme.spacing.xs)
+                        .fillMaxWidth(0.7f)
+                        .clip(RoundedCornerShape(MaterialTheme.corners.small))
+                        .background(shimmer)
+                )
+            }
+        }
+    }
+}
+
+// Enough tiles and bubbles to fill the row's width on any phone.
+private const val CATEGORY_PLACEHOLDER_COUNT = 5
+private const val INGREDIENT_PLACEHOLDER_COUNT = 6
+
+// Pill widths for the cuisines skeleton (text width, inside the pill's padding), mixed like
+// real cuisine names. The real list is longer, so the section grows a little once it's in.
+private val cuisinePlaceholderWidths = listOf(72, 96, 64, 88, 104, 76, 92, 60, 84, 100, 68, 80).map { it.dp }
 
 // --- Shared states ----------------------------------------------------------------------------
 

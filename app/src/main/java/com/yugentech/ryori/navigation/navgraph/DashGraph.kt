@@ -8,7 +8,6 @@ import androidx.navigation.compose.composable
 import com.yugentech.ryori.api.model.domain.RecipeFilter
 import com.yugentech.ryori.api.model.domain.RecipeType
 import com.yugentech.ryori.navigation.screen.AppScreen
-import com.yugentech.ryori.navigation.screen.BottomBarScreen
 import com.yugentech.ryori.ui.config.recentlyViewedScreen.RecentlyViewedScreen
 import com.yugentech.ryori.ui.main.mainScreen.MainScreen
 import com.yugentech.ryori.ui.main.recipeListScreen.RecipeListScreen
@@ -41,6 +40,7 @@ fun NavGraphBuilder.dashGraph(
             onAppearance = { open(AppScreen.Appearance) },
             onRecentlyViewed = { open(AppScreen.RecentlyViewed) },
             onWhatsNew = { open(AppScreen.WhatsNew) },
+            onMoreApps = { open(AppScreen.MoreApps) },
             requestedTab = requestedTab,
             onTabRequestHandled = { backStackEntry.savedStateHandle.set<String?>(AppScreen.REQUESTED_TAB, null) }
         )
@@ -49,12 +49,7 @@ fun NavGraphBuilder.dashGraph(
     composable(AppScreen.RecentlyViewed.route) {
         RecentlyViewedScreen(
             onBack = { navController.popBackStack() },
-            onRecipeClick = openRecipe,
-            onExplore = {
-                navController.previousBackStackEntry?.savedStateHandle
-                    ?.set<String?>(AppScreen.REQUESTED_TAB, BottomBarScreen.Search.route)
-                navController.popBackStack()
-            }
+            onRecipeClick = openRecipe
         )
     }
 

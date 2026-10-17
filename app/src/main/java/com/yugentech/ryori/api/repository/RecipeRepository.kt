@@ -13,6 +13,13 @@ import com.yugentech.ryori.api.model.domain.RecipeType
 interface RecipeRepository {
     suspend fun getCategories(): Result<List<Category>>
     suspend fun getAreas(): Result<List<Area>>
+
+    // One cuisine that has recipes, with up to [limit] of them, for Home's spotlight row.
+    // Cheap: tries [preferred] then a few random cuisines instead of checking all of them.
+    suspend fun getCuisineSpotlight(
+        limit: Int,
+        preferred: List<String> = emptyList()
+    ): Result<Pair<String, List<RecipeSummary>>>
     suspend fun getPopularIngredients(limit: Int): Result<List<IngredientInfo>>
     suspend fun getDrinks(): Result<List<RecipeSummary>>
     suspend fun search(query: String): Result<List<RecipeSummary>>

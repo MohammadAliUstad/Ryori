@@ -24,15 +24,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yugentech.ryori.theme.viewmodel.ThemeViewModel
 import com.yugentech.ryori.ui.main.mainScreen.components.SectionHeader
 import com.yugentech.ryori.ui.main.mainScreen.components.itemShape
 import com.yugentech.ryori.theme.config.ThemeMode
-import com.yugentech.ryori.theme.service.HapticService
 import com.yugentech.ryori.theme.tokens.spacing
-import org.koin.compose.koinInject
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -40,8 +39,7 @@ fun ThemeModeSelector(
     modifier: Modifier = Modifier,
     themeViewModel: ThemeViewModel
 ) {
-    val haptic = koinInject<HapticService>()
-    val view = LocalView.current
+    val haptic = LocalHapticFeedback.current
     val themeConfig by themeViewModel.themeConfiguration.collectAsStateWithLifecycle()
 
     Column(modifier = modifier.fillMaxWidth()) {
@@ -85,7 +83,7 @@ fun ThemeModeSelector(
                     index = index,
                     totalCount = modes.size,
                     onClick = {
-                        haptic.performHaptic(view)
+                        haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
                         val newConfig = themeConfig.copy(themeMode = themeMode)
                         themeViewModel.updateTheme(newConfig)
                     }

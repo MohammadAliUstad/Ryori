@@ -44,6 +44,7 @@ fun MainScreen(
     onAppearance: () -> Unit,
     onRecentlyViewed: () -> Unit,
     onWhatsNew: () -> Unit,
+    onMoreApps: () -> Unit,
     requestedTab: String? = null,
     onTabRequestHandled: () -> Unit = {}
 ) {
@@ -124,6 +125,7 @@ fun MainScreen(
                             onAppearance = onAppearance,
                             onRecentlyViewed = onRecentlyViewed,
                             onWhatsNew = onWhatsNew,
+                            onMoreApps = onMoreApps,
                             contentPadding = innerPadding
                         )
                     }

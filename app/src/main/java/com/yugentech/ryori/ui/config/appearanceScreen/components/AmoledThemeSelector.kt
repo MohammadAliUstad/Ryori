@@ -25,15 +25,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yugentech.ryori.theme.viewmodel.ThemeViewModel
 import com.yugentech.ryori.theme.config.ThemeMode
-import com.yugentech.ryori.theme.service.HapticService
 import com.yugentech.ryori.theme.tokens.components
 import com.yugentech.ryori.theme.tokens.corners
 import com.yugentech.ryori.theme.tokens.spacing
-import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -41,8 +40,7 @@ fun AmoledThemeSelector(
     modifier: Modifier = Modifier,
     viewModel: ThemeViewModel
 ) {
-    val haptic = koinInject<HapticService>()
-    val view = LocalView.current
+    val haptic = LocalHapticFeedback.current
     val themeConfig by viewModel.themeConfiguration.collectAsStateWithLifecycle()
     val isSystemDark = isSystemInDarkTheme()
     val isDarkThemeActive =
@@ -102,7 +100,7 @@ fun AmoledThemeSelector(
                         checked = themeConfig.isAmoledMode,
                         enabled = isDarkThemeActive,
                         onCheckedChange = { isChecked ->
-                            haptic.performHaptic(view)
+                            haptic.performHapticFeedback(if (isChecked) HapticFeedbackType.ToggleOn else HapticFeedbackType.ToggleOff)
                             viewModel.updateTheme(themeConfig.copy(isAmoledMode = isChecked))
                         },
                         thumbContent = if (themeConfig.isAmoledMode) {

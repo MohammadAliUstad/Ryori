@@ -26,7 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -35,10 +36,8 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.yugentech.ryori.api.model.domain.RecipeSummary
 import com.yugentech.ryori.api.model.domain.RecipeType
-import com.yugentech.ryori.theme.service.HapticService
 import com.yugentech.ryori.theme.tokens.corners
 import com.yugentech.ryori.theme.tokens.spacing
-import org.koin.compose.koinInject
 
 // Width of cards in horizontal rows.
 val RecipeRowCardWidth: Dp = 150.dp
@@ -59,14 +58,13 @@ fun RecipeCard(
     modifier: Modifier = Modifier,
     titleLines: Int = 2
 ) {
-    val haptic = koinInject<HapticService>()
-    val view = LocalView.current
+    val haptic = LocalHapticFeedback.current
 
     // Only the photo is clipped to the rounded shape. Clipping the whole card would also cut
     // the corners off the name text underneath it.
     Column(
         modifier = modifier.clickable {
-            haptic.performHaptic(view)
+            haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
             onClick(recipe)
         }
     ) {

@@ -83,7 +83,7 @@ Recipes are powered by **TheMealDB**, with non-alcoholic drinks from **TheCockta
 
 ### Make It Yours
 
-- **8 color themes:** Dynamic (Material You), Twilight, Grove, Canyon, Sakura, Lagoon, Harvest and Alpine.
+- **8 color themes:** Dynamic (Material You), Ryori, Lagoon, Grove, Harvest, Sakura, Alpine and Twilight.
 - **Light, dark and system modes,** plus **AMOLED black**.
 - **6 fonts:** Google Sans, Outfit, Manrope, Urbanist, Figtree and Garamond.
 - **Gentle haptics** on taps and toggles, which you can switch off.

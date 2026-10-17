@@ -17,7 +17,7 @@ android {
         applicationId = "com.yugentech.ryori"
         minSdk = 33
         targetSdk = 37
-        versionCode = 1
+        versionCode = 3
         versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

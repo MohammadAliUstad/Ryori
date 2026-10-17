@@ -21,18 +21,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.yugentech.ryori.data.stats.KitchenStats
-import com.yugentech.ryori.theme.service.HapticService
 import com.yugentech.ryori.theme.tokens.corners
 import com.yugentech.ryori.theme.tokens.icons
 import com.yugentech.ryori.theme.tokens.spacing
 import com.yugentech.ryori.ui.main.mainScreen.components.rowItemShape
-import org.koin.compose.koinInject
 import java.util.Locale
 
 // Top of the More tab: who's cooking, their "rank", and a few stats from how they use the app.
@@ -42,8 +41,7 @@ fun ChefCard(
     stats: KitchenStats,
     onEditName: () -> Unit
 ) {
-    val haptic = koinInject<HapticService>()
-    val view = LocalView.current
+    val haptic = LocalHapticFeedback.current
 
     Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs)) {
         Surface(
@@ -85,7 +83,7 @@ fun ChefCard(
 
                 IconButton(
                     onClick = {
-                        haptic.performHaptic(view)
+                        haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
                         onEditName()
                     },
                     colors = IconButtonDefaults.iconButtonColors(

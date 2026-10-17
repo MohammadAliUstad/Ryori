@@ -11,7 +11,9 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -19,7 +21,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.rounded.DeleteSweep
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,7 +37,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -56,13 +59,13 @@ import org.koin.androidx.compose.koinViewModel
 fun RecentlyViewedScreen(
     onBack: () -> Unit,
     onRecipeClick: (RecipeType, String) -> Unit,
-    onExplore: () -> Unit,
     viewModel: RecentlyViewedViewModel = koinViewModel()
 ) {
     val recipes by viewModel.recipes.collectAsState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val navBarPadding = WindowInsets.navigationBars.asPaddingValues()
     var confirmClear by rememberSaveable { mutableStateOf(false) }
+    val haptic = LocalHapticFeedback.current
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -72,13 +75,15 @@ fun RecentlyViewedScreen(
                     Column {
                         Text("Recently viewed")
                         val count = recipes?.size ?: 0
-                        if (count > 0) {
-                            Text(
-                                text = if (count == 1) "1 recipe" else "$count recipes",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                        Text(
+                            text = when (count) {
+                                0 -> "Find your way back to recipes"
+                                1 -> "1 recipe"
+                                else -> "$count recipes"
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 },
                 navigationIcon = {
@@ -88,7 +93,12 @@ fun RecentlyViewedScreen(
                 },
                 actions = {
                     if (!recipes.isNullOrEmpty()) {
-                        IconButton(onClick = { confirmClear = true }) {
+                        IconButton(
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
+                                confirmClear = true
+                            }
+                        ) {
                             Icon(Icons.Rounded.DeleteSweep, contentDescription = "Clear recently viewed")
                         }
                     }
@@ -111,11 +121,9 @@ fun RecentlyViewedScreen(
             list == null -> Box(Modifier.fillMaxSize())
 
             list.isEmpty() -> EmptyRecent(
-                onExplore = onExplore,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(horizontal = MaterialTheme.spacing.xl)
             )
 
             else -> LazyVerticalGrid(
@@ -139,7 +147,6 @@ fun RecentlyViewedScreen(
 
     if (confirmClear) {
         ConfirmDialog(
-            icon = Icons.Outlined.DeleteSweep,
             title = "Clear recently viewed?",
             message = "This empties your recently viewed list. Your kitchen stats stay as they are.",
             confirmLabel = "Clear",
@@ -150,37 +157,37 @@ fun RecentlyViewedScreen(
     }
 }
 
+// Same layout as Quill's empty highlights: illustration, bold title, two-line hint, no button.
 @Composable
-private fun EmptyRecent(
-    onExplore: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(
+private fun EmptyRecent(modifier: Modifier = Modifier) {
+    Box(
         modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        contentAlignment = Alignment.Center
     ) {
-        Image(
-            painter = painterResource(R.drawable.whoa),
-            contentDescription = null,
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.height(200.dp)
-        )
-        Spacer(Modifier.height(MaterialTheme.spacing.l))
-        Text(
-            text = "Nothing cooked up yet",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center
-        )
-        Spacer(Modifier.height(MaterialTheme.spacing.xs))
-        Text(
-            text = "Recipes you open will appear here, so you can find your way back to them.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
-        Spacer(Modifier.height(MaterialTheme.spacing.l))
-        Button(onClick = onExplore) { Text("Find something to cook") }
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.offset(y = (-50).dp)
+        ) {
+            Image(
+                painter = painterResource(R.drawable.whoa),
+                contentDescription = "No recently viewed recipes",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.size(240.dp)
+            )
+            Spacer(Modifier.height(24.dp))
+            Text(
+                text = "Nothing cooked up yet",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "Recipes you open while browsing\nwill appear here.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }
