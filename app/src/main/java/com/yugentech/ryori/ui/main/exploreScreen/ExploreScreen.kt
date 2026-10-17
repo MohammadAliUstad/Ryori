@@ -2,6 +2,8 @@ package com.yugentech.ryori.ui.main.exploreScreen
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -58,6 +60,10 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import dev.chrisbanes.haze.hazeSource
@@ -434,6 +440,8 @@ private fun BrowseSections(
     val horizontalPadding = PaddingValues(horizontal = MaterialTheme.spacing.m)
     // One pulse for every skeleton, so they all breathe together.
     val shimmer = rememberShimmerColor()
+    // Outside the LazyColumn, so it outlives the cuisines item scrolling off screen.
+    val cuisinesShown = remember { ShownCount() }
 
     // What needs no network (the surprise cards, the drink categories, A-Z) shows straight away.
     // Each loaded section shows a skeleton the size of its content until its data is in, then
@@ -477,17 +485,43 @@ private fun BrowseSections(
         if (uiState.areasLoading || uiState.areas.isNotEmpty()) {
             item { SectionHeader(icon = Icons.Rounded.Public, title = "Cuisines") }
             item {
-                SectionCrossfade(loading = uiState.areasLoading, label = "cuisines") { showPlaceholder ->
+                // Cuisines come in batches on a cold cache: the skeleton only stands in until the
+                // first batch is found, then each new batch fades in at the end, with a few
+                // skeleton pills after them until the last check is in.
+                SectionCrossfade(
+                    loading = uiState.areasLoading && uiState.areas.isEmpty(),
+                    label = "cuisines"
+                ) { showPlaceholder ->
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.s),
                         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.s),
-                        modifier = Modifier.padding(horizontalPadding)
+                        itemVerticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .padding(horizontalPadding)
+                            .animateContentSize()
                     ) {
                         if (showPlaceholder) {
                             cuisinePlaceholderWidths.forEach { width -> PillPlaceholder(width = width, shimmer = shimmer) }
                         } else {
-                            uiState.areas.forEach { area ->
-                                CuisineChip(area = area, onClick = { onBrowse(RecipeFilter.AREA, area.name) })
+                            // Chips past the ones already shown are the new batch; they pop in one
+                            // after another. Chips shown before (e.g. scrolled back into view) don't.
+                            val firstNew = cuisinesShown.count
+                            SideEffect { cuisinesShown.count = uiState.areas.size }
+                            uiState.areas.forEachIndexed { index, area ->
+                                key(area.name) {
+                                    PopIn(
+                                        animate = index >= firstNew,
+                                        delayMillis = (index - firstNew).coerceIn(0, CUISINE_STAGGER_MAX_STEPS) *
+                                            CUISINE_STAGGER_MILLIS
+                                    ) {
+                                        CuisineChip(area = area, onClick = { onBrowse(RecipeFilter.AREA, area.name) })
+                                    }
+                                }
+                            }
+                            if (uiState.areasLoading) {
+                                cuisinePlaceholderWidths.take(CUISINE_TRAILING_PLACEHOLDER_COUNT).forEach { width ->
+                                    PillPlaceholder(width = width, shimmer = shimmer)
+                                }
                             }
                         }
                     }
@@ -825,6 +859,34 @@ private fun SectionCrossfade(
     ) { showPlaceholder -> content(showPlaceholder) }
 }
 
+// How many cuisine chips have been shown, to tell a newly arrived batch from the rest. A plain
+// holder rather than state: it's only read to pick the starting animation, never to redraw.
+private class ShownCount(var count: Int = 0)
+
+// Fades and springs its content up from slightly smaller after [delayMillis], e.g. a cuisine
+// chip that just arrived. It takes its full space from the start, so the row doesn't reflow
+// as it appears.
+@Composable
+private fun PopIn(animate: Boolean, delayMillis: Int, content: @Composable () -> Unit) {
+    val progress = remember { Animatable(if (animate) 0f else 1f) }
+    val spec = MaterialTheme.motionScheme.defaultSpatialSpec<Float>()
+    LaunchedEffect(Unit) {
+        if (progress.value < 1f) {
+            delay(delayMillis.toLong())
+            progress.animateTo(1f, spec)
+        }
+    }
+    Box(
+        modifier = Modifier.graphicsLayer {
+            // The expressive spring overshoots a little: a bounce on the scale, none on the alpha.
+            alpha = progress.value.coerceIn(0f, 1f)
+            val scale = 0.8f + 0.2f * progress.value
+            scaleX = scale
+            scaleY = scale
+        }
+    ) { content() }
+}
+
 // Same as the categories LazyRow: CategoryTile's 128dp card, its padding, the 1.3 image and one
 // line of label, with the row's spacing. Not scrollable while loading.
 @Composable
@@ -870,12 +932,15 @@ private fun CategoryRowPlaceholder(contentPadding: PaddingValues, shimmer: Color
     }
 }
 
-// The same height as FilterPill (one labelLarge line plus its 8dp top and bottom padding), at a
-// given width.
+// The same height as a CuisineChip (one labelLarge line plus its 8dp top and bottom padding), at
+// a given width. The line holds an invisible flag: the emoji makes a chip's line taller than
+// plain (or empty) text, which left the skeletons sitting higher than the chips beside them.
 @Composable
 private fun PillPlaceholder(width: Dp, shimmer: Color) {
     Text(
-        text = "",
+        text = CuisineFlags.flag(PLACEHOLDER_FLAG_AREA),
+        color = Color.Transparent,
+        maxLines = 1,
         style = MaterialTheme.typography.labelLarge,
         modifier = Modifier
             .clip(RoundedCornerShape(MaterialTheme.corners.pill))
@@ -928,6 +993,17 @@ private const val INGREDIENT_PLACEHOLDER_COUNT = 6
 // Pill widths for the cuisines skeleton (text width, inside the pill's padding), mixed like
 // real cuisine names. The real list is longer, so the section grows a little once it's in.
 private val cuisinePlaceholderWidths = listOf(72, 96, 64, 88, 104, 76, 92, 60, 84, 100, 68, 80).map { it.dp }
+
+// Skeleton pills after the cuisines found so far, while the rest are still being checked.
+private const val CUISINE_TRAILING_PLACEHOLDER_COUNT = 3
+
+// Any cuisine with a flag, measured by the skeleton pills to match the chips' height.
+private const val PLACEHOLDER_FLAG_AREA = "Italian"
+
+// The gap between chips of a new batch popping in, capped so a whole list landing at once
+// (a warm cache) still finishes quickly.
+private const val CUISINE_STAGGER_MILLIS = 35
+private const val CUISINE_STAGGER_MAX_STEPS = 10
 
 // --- Shared states ----------------------------------------------------------------------------
 

@@ -96,7 +96,11 @@ class ExploreViewModel(
                     }
                 },
                 async {
-                    repository.getAreas().also { result ->
+                    // Cuisines show in batches as they're found; the section stays "loading" (with a few
+                    // trailing skeleton pills) until the last check is in.
+                    repository.getAreas(
+                        onProgress = { found -> _uiState.update { it.copy(areas = found) } }
+                    ).also { result ->
                         _uiState.update { it.copy(areasLoading = false, areas = result.getOrDefault(emptyList())) }
                     }
                 },

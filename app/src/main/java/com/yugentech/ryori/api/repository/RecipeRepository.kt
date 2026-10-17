@@ -12,7 +12,10 @@ import com.yugentech.ryori.api.model.domain.RecipeType
 // Explore, recipe list and recipe details screens.
 interface RecipeRepository {
     suspend fun getCategories(): Result<List<Category>>
-    suspend fun getAreas(): Result<List<Area>>
+
+    // [onProgress] gets the cuisines found so far while a slow (cold cache) load is still
+    // checking the rest, in batches, so they can be shown as they come. Each call extends the last.
+    suspend fun getAreas(onProgress: (List<Area>) -> Unit = {}): Result<List<Area>>
 
     // One cuisine that has recipes, with up to [limit] of them, for Home's spotlight row.
     // Cheap: tries [preferred] then a few random cuisines instead of checking all of them.

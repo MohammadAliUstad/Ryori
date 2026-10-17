@@ -54,7 +54,7 @@ class RecipeRepositoryImpl(
     // ~195 requests, so they run a few at a time (a burst gets requests rejected), and a
     // complete result is kept for the session and saved for a week, so the checks run at most
     // weekly rather than every launch.
-    override suspend fun getAreas(): Result<List<Area>> = runCatching {
+    override suspend fun getAreas(onProgress: (List<Area>) -> Unit): Result<List<Area>> = runCatching {
         verifiedAreas ?: areasMutex.withLock {
             verifiedAreas?.let { return@withLock it }
             val saved = cache.get(VERIFIED_AREAS_KEY)
@@ -65,13 +65,38 @@ class RecipeRepositoryImpl(
                 verifiedAreas = savedAreas
                 return@withLock savedAreas
             }
+            // A stale list is shown while it's rechecked; with none, cuisines are reported as
+            // their checks come back (see below).
+            if (savedAreas != null) onProgress(savedAreas)
+            val names = areaNames()
             val checks = Semaphore(AREA_CHECK_CONCURRENCY)
+            // Answers by position. Only the run of answered names from the start is reported, so
+            // cuisines appear in list order and the shown list only ever grows at the end. They're
+            // reported in batches rather than one at a time; the last few come with the result.
+            val answers = arrayOfNulls<Result<Boolean>>(names.size)
+            val found = mutableListOf<Area>()
+            var reported = 0
+            var lastBatchSize = 0
+            val progressLock = Mutex()
             val results = coroutineScope {
-                areaNames().map { name ->
+                names.mapIndexed { index, name ->
                     async {
-                        name to checks.withPermit {
+                        val hasRecipes = checks.withPermit {
                             runCatching { foodService.getMealsByArea(name).meals.orEmpty().any { it != null } }
                         }
+                        if (savedAreas == null) progressLock.withLock {
+                            answers[index] = hasRecipes
+                            while (reported < names.size) {
+                                val answer = answers[reported] ?: break
+                                if (answer.getOrDefault(false)) found += Area(names[reported])
+                                reported++
+                            }
+                            if (found.size - lastBatchSize >= AREA_PROGRESS_BATCH) {
+                                lastBatchSize = found.size
+                                onProgress(found.toList())
+                            }
+                        }
+                        name to hasRecipes
                     }
                 }.map { it.await() }
             }
@@ -400,6 +425,9 @@ class RecipeRepositoryImpl(
 
     private companion object {
         const val AREA_CHECK_CONCURRENCY = 6
+
+        // How many newly found cuisines getAreas() gathers before reporting them.
+        const val AREA_PROGRESS_BATCH = 8
 
         // ApiCache entry for the checked cuisine list. Not a real URL, so no request maps to it.
         const val VERIFIED_AREAS_KEY = "ryori://verified-areas"
