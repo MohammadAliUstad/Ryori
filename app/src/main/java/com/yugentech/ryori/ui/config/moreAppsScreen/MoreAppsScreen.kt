@@ -1,5 +1,7 @@
 package com.yugentech.ryori.ui.config.moreAppsScreen
 
+import androidx.compose.ui.res.stringResource
+import androidx.annotation.StringRes
 import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Animatable
@@ -32,17 +34,23 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.automirrored.outlined.CallSplit
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Analytics
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.AutoStories
 import androidx.compose.material.icons.outlined.ColorLens
+import androidx.compose.material.icons.outlined.EditNote
+import androidx.compose.material.icons.outlined.Handshake
 import androidx.compose.material.icons.outlined.Headphones
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Insights
+import androidx.compose.material.icons.outlined.KeyboardVoice
 import androidx.compose.material.icons.outlined.LocalLibrary
 import androidx.compose.material.icons.outlined.LunchDining
 import androidx.compose.material.icons.outlined.Psychology
+import androidx.compose.material.icons.outlined.QueryStats
 import androidx.compose.material.icons.outlined.RecordVoiceOver
 import androidx.compose.material.icons.outlined.School
 import androidx.compose.material.icons.outlined.Security
@@ -90,21 +98,22 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toUri
 import com.yugentech.ryori.R
+import com.yugentech.ryori.theme.SheetTheme
 import com.yugentech.ryori.theme.tokens.spacing
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private data class Feature(
     val icon: ImageVector,
-    val title: String,
-    val description: String
+    @param:StringRes val title: Int,
+    @param:StringRes val description: Int
 )
 
-private data class Fact(val value: String, val label: String)
+private data class Fact(val value: String, @param:StringRes val label: Int)
 
 private data class SisterApp(
     val name: String,
-    val tagline: String,
+    @param:StringRes val tagline: Int,
     val packageName: String,
     @param:DrawableRes val animatedIcon: Int,
     // Launcher background colour, so the icon sits on the same tile as on the home screen.
@@ -114,102 +123,152 @@ private data class SisterApp(
     val iconSize: Dp,
     val animationMillis: Long,
     val facts: List<Fact>,
-    val features: List<Feature>
+    val features: List<Feature>,
+    // Not out yet: a Coming soon label stands in for the Play Store buttons.
+    val comingSoon: Boolean = false
 )
 
 private val quill = SisterApp(
     name = "Quill",
-    tagline = "Read Deeper. Think Further.",
+    tagline = R.string.quill_tagline,
     packageName = "com.yugentech.quill",
     animatedIcon = R.drawable.avd_quill,
     iconBackground = Color(0xFF576421),
     iconSize = 64.dp,
     animationMillis = 1900,
-    // No store stats for Quill yet, so its card has no stats strip.
-    facts = emptyList(),
+    facts = listOf(
+        Fact("4.9★", R.string.more_apps_fact_reviews_quill),
+        Fact("1K+", R.string.more_apps_fact_downloads)
+    ),
     features = listOf(
         Feature(
             Icons.Outlined.Psychology,
-            "Aira",
-            "An AI reading companion that answers from your book, locked to your progress so it never spoils what's next."
+            R.string.quill_feature_1_title,
+            R.string.quill_feature_1_body
         ),
         Feature(
             Icons.Outlined.AutoAwesome,
-            "Character Companion",
-            "Recall who someone is, what they're up to lately, or trace their whole journey so far."
+            R.string.quill_feature_2_title,
+            R.string.quill_feature_2_body
         ),
         Feature(
             Icons.Outlined.Image,
-            "Visualize Scenes",
-            "Turn a passage into an illustration, then jump straight back to where it came from."
+            R.string.quill_feature_3_title,
+            R.string.quill_feature_3_body
         ),
         Feature(
             Icons.Outlined.AutoStories,
-            "A Beautiful Reader",
-            "Fonts, spacing, page themes, highlights, night light and paged or scrolling layouts."
+            R.string.quill_feature_4_title,
+            R.string.quill_feature_4_body
         ),
         Feature(
             Icons.Outlined.LocalLibrary,
-            "Endless Library",
-            "Import your own EPUBs or download from 60,000+ free Project Gutenberg and Standard Ebooks titles."
+            R.string.quill_feature_5_title,
+            R.string.quill_feature_5_body
         ),
         Feature(
             Icons.Outlined.Insights,
-            "Reading Insights",
-            "Streaks, a reading heatmap, peak hours and favorite authors, with gentle daily reminders."
+            R.string.quill_feature_6_title,
+            R.string.quill_feature_6_body
         )
     )
 )
 
 private val sessions = SisterApp(
     name = "Sessions",
-    tagline = "Ultimate Pomodoro Timer",
+    tagline = R.string.sessions_tagline,
     packageName = "com.yugentech.sessions",
     animatedIcon = R.drawable.ic_sessions_animated,
     iconBackground = Color(0xFFFFE6C7),
     iconSize = 156.dp,
     animationMillis = 900,
     facts = listOf(
-        Fact("4.9★", "70+ reviews"),
-        Fact("3K+", "Downloads")
+        Fact("4.9★", R.string.more_apps_fact_reviews),
+        Fact("5K+", R.string.more_apps_fact_downloads)
     ),
     features = listOf(
         Feature(
             Icons.Outlined.Timer,
-            "Smart Engine",
-            "Customizable cycles and smart intervals that work out when to trigger long breaks."
+            R.string.sessions_feature_1_title,
+            R.string.sessions_feature_1_body
         ),
         Feature(
             Icons.Outlined.Headphones,
-            "Immersive Audio",
-            "6 curated ambient sounds with adaptive ducking and haptic feedback."
+            R.string.sessions_feature_2_title,
+            R.string.sessions_feature_2_body
         ),
         Feature(
             Icons.Outlined.Analytics,
-            "Deep Analytics",
-            "Heatmaps, total focus time and your peak productivity hours at a glance."
+            R.string.sessions_feature_3_title,
+            R.string.sessions_feature_3_body
         ),
         Feature(
             Icons.Outlined.Security,
-            "Unkillable",
-            "Built to resist aggressive battery optimization, so your timer never drops."
+            R.string.sessions_feature_4_title,
+            R.string.sessions_feature_4_body
         ),
         Feature(
             Icons.Outlined.ColorLens,
-            "Deep Theming",
-            "8 color themes, dynamic Material You, OLED black mode and 6 font options."
+            R.string.sessions_feature_5_title,
+            R.string.sessions_feature_5_body
         ),
         Feature(
             Icons.Outlined.History,
-            "Task History",
-            "Name your sessions to track and review exactly what you worked on."
+            R.string.sessions_feature_6_title,
+            R.string.sessions_feature_6_body
+        )
+    )
+)
+
+private val mynt = SisterApp(
+    name = "Mynt",
+    tagline = R.string.mynt_tagline,
+    packageName = "com.yugentech.mynt",
+    animatedIcon = R.drawable.avd_mynt,
+    iconBackground = Color(0xFFFBF6E4),
+    // Drawn larger than the tile, as Mynt itself does, so the wallet fills it.
+    iconSize = 132.dp,
+    animationMillis = 1300,
+    // Out on the Play Store now, so it gets the Get on Play Store button (no store stats yet)
+    facts = emptyList(),
+    // Mynt's own key features, from its Meet Mynt screen.
+    features = listOf(
+        Feature(
+            Icons.Outlined.KeyboardVoice,
+            R.string.mynt_feature_1_title,
+            R.string.mynt_feature_1_body
+        ),
+        Feature(
+            Icons.Outlined.Handshake,
+            R.string.mynt_feature_2_title,
+            R.string.mynt_feature_2_body
+        ),
+        Feature(
+            Icons.AutoMirrored.Outlined.CallSplit,
+            R.string.mynt_feature_3_title,
+            R.string.mynt_feature_3_body
+        ),
+        Feature(
+            Icons.Outlined.QueryStats,
+            R.string.mynt_feature_4_title,
+            R.string.mynt_feature_4_body
+        ),
+        Feature(
+            Icons.Outlined.EditNote,
+            R.string.mynt_feature_5_title,
+            R.string.mynt_feature_5_body
+        ),
+        Feature(
+            Icons.Outlined.RecordVoiceOver,
+            R.string.mynt_feature_6_title,
+            R.string.mynt_feature_6_body
         )
     )
 )
 
 private val hajime = SisterApp(
     name = "Hajime",
-    tagline = "Learn to Read Japanese",
+    tagline = R.string.hajime_tagline,
     packageName = "com.yugentech.hajime",
     animatedIcon = R.drawable.avd_hajime,
     iconBackground = Color(0xFFF5F0E8),
@@ -220,39 +279,42 @@ private val hajime = SisterApp(
     features = listOf(
         Feature(
             Icons.Outlined.Translate,
-            "Learn to Read Japanese",
-            "Hiragana and katakana first, then kanji, words and sentences, one short lesson at a time."
+            R.string.hajime_feature_1_title,
+            R.string.hajime_feature_1_body
         ),
         Feature(
             Icons.Outlined.School,
-            "Every JLPT Kanji",
-            "N5 to N1 kanji with readings, meanings, parts, common words and example sentences with furigana."
+            R.string.hajime_feature_2_title,
+            R.string.hajime_feature_2_body
         ),
         Feature(
             Icons.Outlined.History,
-            "Reviews That Remember",
-            "Spaced repetition brings each item back just before you'd forget it, so what you learn sticks."
+            R.string.hajime_feature_3_title,
+            R.string.hajime_feature_3_body
         ),
         Feature(
             Icons.Outlined.AutoAwesome,
-            "Sensei, Your AI Tutor",
-            "Ask anything about Japanese and get stories, sentence breakdowns and quizzes built from what you've learned."
+            R.string.hajime_feature_4_title,
+            R.string.hajime_feature_4_body
         ),
         Feature(
             Icons.Outlined.RecordVoiceOver,
-            "Hear Every Word",
-            "Every kana, kanji, word and sentence can be read aloud in a Japanese voice."
+            R.string.hajime_feature_5_title,
+            R.string.hajime_feature_5_body
         ),
         Feature(
             Icons.Outlined.Insights,
-            "Study Insights",
-            "Streaks, a study heatmap, your trickiest mix-ups and progress through every JLPT level."
+            R.string.hajime_feature_6_title,
+            R.string.hajime_feature_6_body
         )
     )
 )
 
+// The other apps, in the family's order, as the screen and the sheet list them.
+private val sisterApps = listOf(quill, mynt, hajime, sessions)
+
 // Where each app's carousel starts in the primary / secondary / tertiary cycle.
-private val CarouselColorOffsets = listOf(0, 2, 1)
+private val CarouselColorOffsets = listOf(0, 1, 2, 0)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -267,12 +329,12 @@ fun MoreAppsScreen(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
-                title = { Text("More from us") },
+                title = { Text(stringResource(R.string.settings_more_from_us)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.back)
                         )
                     }
                 },
@@ -291,20 +353,20 @@ fun MoreAppsScreen(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
                 top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.s,
-                bottom = navBarPadding.calculateBottomPadding()
+                bottom = navBarPadding.calculateBottomPadding() + 8.dp
             ),
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.l)
         ) {
             item { IntroText() }
 
-            listOf(quill, hajime, sessions).forEachIndexed { appIndex, app ->
+            sisterApps.forEachIndexed { appIndex, app ->
                 item(key = "${app.name}_hero") {
                     AppHeroCard(app = app, onGetApp = { openStore(context, app.packageName) })
                 }
                 item(key = "${app.name}_features") {
                     Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.m)) {
-                        SectionLabel("Key Features")
-                        // Each carousel starts on a different colour (primary, tertiary, secondary) so they don't repeat.
+                        SectionLabel(stringResource(R.string.more_apps_key_features))
+                        // Each carousel starts on the next colour along, so neighbours don't repeat.
                         FeatureCarousel(features = app.features, colorOffset = CarouselColorOffsets[appIndex])
                     }
                 }
@@ -324,13 +386,13 @@ private fun IntroText() {
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xs)
     ) {
         Text(
-            text = "Three more apps, made with the same care",
+            text = stringResource(R.string.more_apps_subtitle),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
         )
         Text(
-            text = "If you enjoy cooking with Ryori, you might like reading with Quill, learning Japanese with Hajime and focusing with Sessions.",
+            text = stringResource(R.string.more_apps_intro),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -435,33 +497,37 @@ private fun AppHeroCard(app: SisterApp, onGetApp: () -> Unit) {
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = app.tagline,
+                            text = stringResource(app.tagline),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
-                    Button(
-                        onClick = onGetApp,
-                        modifier = Modifier.height(40.dp),
-                        contentPadding = PaddingValues(horizontal = 14.dp),
-                        shape = RoundedCornerShape(8.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
-                        )
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Get on Play Store",
-                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
-                        )
+                    if (app.comingSoon) {
+                        ComingSoonLabel()
+                    } else {
+                        Button(
+                            onClick = onGetApp,
+                            modifier = Modifier.height(40.dp),
+                            contentPadding = PaddingValues(horizontal = 14.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = stringResource(R.string.more_apps_get_on_play),
+                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
+                            )
+                        }
                     }
                 }
             }
@@ -508,7 +574,7 @@ private fun FactItem(fact: Fact, modifier: Modifier = Modifier) {
             color = MaterialTheme.colorScheme.onSurface
         )
         Text(
-            text = fact.label,
+            text = stringResource(fact.label),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -561,13 +627,13 @@ private fun FeatureCarousel(features: List<Feature>, colorOffset: Int = 0) {
                 )
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
-                        text = feature.title,
+                        text = stringResource(feature.title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = fg
                     )
                     Text(
-                        text = feature.description,
+                        text = stringResource(feature.description),
                         style = MaterialTheme.typography.bodySmall,
                         color = fg.copy(alpha = 0.8f),
                         lineHeight = 18.sp
@@ -598,18 +664,19 @@ private fun ClosingCard() {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OverviewIcon(icon = Icons.Outlined.LunchDining, contentDescription = "Ryori")
                 OverviewIcon(icon = Icons.Outlined.AutoStories, contentDescription = "Quill")
+                OverviewIcon(icon = Icons.Outlined.AccountBalanceWallet, contentDescription = "Mynt")
                 OverviewIcon(icon = Icons.Outlined.Translate, contentDescription = "Hajime")
                 OverviewIcon(icon = Icons.Outlined.Timer, contentDescription = "Sessions")
             }
             Text(
-                text = "Cook. Read. Learn. Focus.",
+                text = stringResource(R.string.more_apps_overview_title),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                 textAlign = TextAlign.Center
             )
             Text(
-                text = "Ryori, Quill, Hajime and Sessions are made by YugenTech: small, thoughtful apps built to make everyday moments a little calmer.",
+                text = stringResource(R.string.more_apps_overview_body),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
                 textAlign = TextAlign.Center,
@@ -674,98 +741,100 @@ fun MoreFromUsSheet(onDismiss: () -> Unit, onSeeAll: () -> Unit) {
     val context = LocalContext.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
-    val apps = listOf(quill, hajime, sessions)
+    val apps = sisterApps
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        // Sessions' sheet handle: a small pill with roomy padding, so it's easy to grab.
-        dragHandle = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = {}
-                    )
-                    .padding(vertical = 22.dp),
-                contentAlignment = Alignment.Center
-            ) {
+    SheetTheme {
+        ModalBottomSheet(
+            onDismissRequest = onDismiss,
+            sheetState = sheetState,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            // Sessions' sheet handle: a small pill with roomy padding, so it's easy to grab.
+            dragHandle = {
                 Box(
                     modifier = Modifier
-                        .size(width = 32.dp, height = 6.dp)
-                        .background(
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                            shape = CircleShape
+                        .fillMaxWidth()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {}
                         )
-                )
-            }
-        }
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp)
-                .padding(bottom = 16.dp)
-        ) {
-            Text(
-                text = "More from us",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = "Three more apps, made with the same care.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 4.dp)
-            )
-
-            Column(
-                modifier = Modifier.padding(top = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                apps.forEachIndexed { index, app ->
-                    SheetAppRow(
-                        name = app.name,
-                        tagline = app.tagline,
-                        iconBackground = app.iconBackground,
-                        animationMillis = app.animationMillis,
-                        index = index,
-                        count = apps.size,
-                        onGetApp = { openStore(context, app.packageName) }
-                    ) { isAnimating ->
-                        AnimatedAppIcon(
-                            drawableRes = app.animatedIcon,
-                            isAnimating = isAnimating,
-                            // Scaled from the full screen's 88dp tile to the sheet's 56dp one.
-                            modifier = Modifier.requiredSize(app.iconSize * (56f / 88f))
-                        )
-                    }
+                        .padding(vertical = 22.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(width = 32.dp, height = 6.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                                shape = CircleShape
+                            )
+                    )
                 }
             }
-
-            TextButton(
-                onClick = {
-                    // Slides the sheet away first, so it doesn't vanish under the new screen.
-                    scope.launch { sheetState.hide() }.invokeOnCompletion {
-                        onDismiss()
-                        onSeeAll()
-                    }
-                },
+        ) {
+            Column(
                 modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(top = 12.dp)
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .padding(bottom = 16.dp)
             ) {
-                Text("See all features")
-                Spacer(modifier = Modifier.width(8.dp))
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
+                Text(
+                    text = stringResource(R.string.settings_more_from_us),
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
+                Text(
+                    text = stringResource(R.string.more_apps_sheet_subtitle),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+
+                Column(
+                    modifier = Modifier.padding(top = 20.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    apps.forEachIndexed { index, app ->
+                        SheetAppRow(
+                            name = app.name,
+                            tagline = stringResource(app.tagline),
+                            iconBackground = app.iconBackground,
+                            animationMillis = app.animationMillis,
+                            index = index,
+                            count = apps.size,
+                            onGetApp = if (app.comingSoon) null else { { openStore(context, app.packageName) } }
+                        ) { isAnimating ->
+                            AnimatedAppIcon(
+                                drawableRes = app.animatedIcon,
+                                isAnimating = isAnimating,
+                                // Scaled from the full screen's 88dp tile to the sheet's 56dp one.
+                                modifier = Modifier.requiredSize(app.iconSize * (56f / 88f))
+                            )
+                        }
+                    }
+                }
+
+                TextButton(
+                    onClick = {
+                        // Slides the sheet away first, so it doesn't vanish under the new screen.
+                        scope.launch { sheetState.hide() }.invokeOnCompletion {
+                            onDismiss()
+                            onSeeAll()
+                        }
+                    },
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(top = 12.dp)
+                ) {
+                    Text(stringResource(R.string.more_apps_see_all))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
             }
         }
     }
@@ -779,7 +848,7 @@ private fun SheetAppRow(
     animationMillis: Long,
     index: Int,
     count: Int,
-    onGetApp: () -> Unit,
+    onGetApp: (() -> Unit)?,
     icon: @Composable (isAnimating: Boolean) -> Unit
 ) {
     var isAnimating by remember { mutableStateOf(false) }
@@ -840,13 +909,33 @@ private fun SheetAppRow(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            FilledTonalButton(
-                onClick = onGetApp,
-                contentPadding = PaddingValues(horizontal = 18.dp)
-            ) {
-                Text("Get")
+            if (onGetApp == null) {
+                ComingSoonLabel()
+            } else {
+                FilledTonalButton(
+                    onClick = onGetApp,
+                    contentPadding = PaddingValues(horizontal = 18.dp)
+                ) {
+                    Text(stringResource(R.string.more_apps_get))
+                }
             }
         }
+    }
+}
+
+// Stands in for the Play Store button until an app is out.
+@Composable
+private fun ComingSoonLabel() {
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+    ) {
+        Text(
+            text = stringResource(R.string.more_apps_coming_soon),
+            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+        )
     }
 }
 

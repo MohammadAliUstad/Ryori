@@ -1,5 +1,6 @@
 package com.yugentech.ryori.ui.config.aboutScreen.about
 
+import com.yugentech.ryori.R
 import android.content.Context
 import android.content.Intent
 import androidx.compose.material.icons.Icons
@@ -24,26 +25,26 @@ object AboutContent {
     ): List<AboutOption> {
         return listOf(
             AboutOption(
-                title = "Contact Developer",
-                subtitle = "Get in touch for support",
+                title = R.string.contact_developer,
+                subtitle = R.string.about_contact_subtitle,
                 icon = Icons.Default.Email,
                 onClick = { context.open(Intent(Intent.ACTION_SENDTO, AppConstants.SUPPORT_EMAIL.toUri())) }
             ),
             AboutOption(
-                title = "Buy me a coffee",
-                subtitle = "Support the development",
+                title = R.string.about_coffee,
+                subtitle = R.string.about_coffee_subtitle,
                 icon = Icons.Default.LocalCafe,
                 onClick = { context.open(Intent(Intent.ACTION_VIEW, AppConstants.KOFI_URL.toUri())) }
             ),
             AboutOption(
-                title = "Visit GitHub",
-                subtitle = "View source code and contribute",
+                title = R.string.visit_github,
+                subtitle = R.string.view_source_code_and_contribute,
                 icon = Icons.Default.Code,
                 onClick = { context.open(Intent(Intent.ACTION_VIEW, AppConstants.GITHUB_URL.toUri())) }
             ),
             AboutOption(
-                title = "More from us",
-                subtitle = "Discover other apps we've built",
+                title = R.string.settings_more_from_us,
+                subtitle = R.string.about_more_apps_subtitle,
                 icon = Icons.Default.Apps,
                 onClick = onMoreAppsClick
             )
@@ -53,8 +54,8 @@ object AboutContent {
     fun getCommunityItems(context: Context): List<AboutOption> {
         return listOf(
             AboutOption(
-                title = "Rate Ryori",
-                subtitle = "Leave a review on the Play Store",
+                title = R.string.about_rate,
+                subtitle = R.string.about_rate_subtitle,
                 icon = Icons.Default.StarRate,
                 onClick = {
                     // Play Store app if installed, otherwise the store's web page.
@@ -63,15 +64,15 @@ object AboutContent {
                 }
             ),
             AboutOption(
-                title = "Share with Friends",
-                subtitle = "Send it to a fellow foodie",
+                title = R.string.about_share,
+                subtitle = R.string.about_share_subtitle,
                 icon = Icons.Default.Share,
                 onClick = {
                     val send = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, AppConstants.SHARE_MESSAGE)
+                        putExtra(Intent.EXTRA_TEXT, context.getString(R.string.about_share_message, AppConstants.PLAY_STORE_URL))
                     }
-                    context.open(Intent.createChooser(send, "Share Ryori"))
+                    context.open(Intent.createChooser(send, context.getString(R.string.about_share_chooser)))
                 }
             )
         )
@@ -83,20 +84,20 @@ object AboutContent {
     ): List<AboutOption> {
         return listOf(
             AboutOption(
-                title = "Privacy Policy",
+                title = R.string.about_privacy,
                 subtitle = null,
                 icon = Icons.Default.Policy,
                 onClick = { context.open(Intent(Intent.ACTION_VIEW, AppConstants.PRIVACY_POLICY_URL.toUri())) }
             ),
             AboutOption(
-                title = "Terms of Service",
+                title = R.string.about_terms,
                 subtitle = null,
                 icon = Icons.Default.Gavel,
                 onClick = { context.open(Intent(Intent.ACTION_VIEW, AppConstants.TERMS_OF_SERVICE_URL.toUri())) }
             ),
             AboutOption(
-                title = "Attributions",
-                subtitle = "Open source & credits",
+                title = R.string.attributions,
+                subtitle = R.string.about_attributions_subtitle,
                 icon = Icons.Default.Description,
                 onClick = onNavigateToLicenses
             )

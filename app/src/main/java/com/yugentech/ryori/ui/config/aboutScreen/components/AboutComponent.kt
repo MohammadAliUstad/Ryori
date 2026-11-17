@@ -1,5 +1,7 @@
 package com.yugentech.ryori.ui.config.aboutScreen.components
 
+import com.yugentech.ryori.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,7 +32,7 @@ fun AboutComponent(
     ) {
         Icon(
             Icons.Filled.Info,
-            contentDescription = "About Icon",
+            contentDescription = stringResource(R.string.about_icon_cd),
             tint = MaterialTheme.colorScheme.primary
         )
         Column(

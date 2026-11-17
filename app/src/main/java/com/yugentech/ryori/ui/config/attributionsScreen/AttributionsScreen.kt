@@ -1,6 +1,9 @@
 package com.yugentech.ryori.ui.config.attributionsScreen
 
+import com.yugentech.ryori.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -13,7 +16,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.IntegrationInstructions
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBarDefaults
@@ -22,18 +24,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalLayoutDirection
-import com.yugentech.ryori.theme.tokens.LocalDesignTokens
 import com.yugentech.ryori.theme.tokens.spacing
-import com.yugentech.ryori.ui.main.mainScreen.components.SectionHeader
-import com.yugentech.ryori.ui.config.aboutScreen.model.license.LicensesContent
-import com.yugentech.ryori.ui.main.mainScreen.components.itemShape
-import com.yugentech.ryori.utils.AppConstants
-import com.yugentech.ryori.ui.config.attributionsScreen.components.AttributionCarousel
+import com.yugentech.ryori.ui.config.attributionsScreen.components.AttributionCarousel // Import the carousel
 import com.yugentech.ryori.ui.config.attributionsScreen.components.AttributionsTopBar
 import com.yugentech.ryori.ui.config.attributionsScreen.components.LibraryItem
 import com.yugentech.ryori.ui.config.attributionsScreen.components.OpenSourceCard
+import com.yugentech.ryori.ui.config.aboutScreen.model.license.LicensesContent
+import com.yugentech.ryori.ui.main.mainScreen.components.SectionHeader
+import com.yugentech.ryori.ui.main.mainScreen.components.itemShape
+import com.yugentech.ryori.utils.AppConstants.GITHUB_URL
+import androidx.compose.ui.unit.dp
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AttributionsScreen(
     onNavigateBack: () -> Unit
@@ -53,36 +54,49 @@ fun AttributionsScreen(
         containerColor = MaterialTheme.colorScheme.background
     ) { scaffoldPadding ->
         val navBarPadding = WindowInsets.navigationBars.asPaddingValues()
-        val tokens = LocalDesignTokens.current
+        // The side inset each item takes itself, so the carousel can run edge to edge
+        val sidePadding = PaddingValues(
+            start = MaterialTheme.spacing.m + scaffoldPadding.calculateStartPadding(layoutDirection),
+            end = MaterialTheme.spacing.m + scaffoldPadding.calculateEndPadding(layoutDirection)
+        )
 
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(top = scaffoldPadding.calculateTopPadding()),
             contentPadding = PaddingValues(
-                top = tokens.spacing.m,
-                bottom = navBarPadding.calculateBottomPadding(),
-                start = tokens.spacing.m + scaffoldPadding.calculateStartPadding(layoutDirection),
-                end = tokens.spacing.m + scaffoldPadding.calculateEndPadding(layoutDirection)
+                top = MaterialTheme.spacing.m,
+                bottom = navBarPadding.calculateBottomPadding() + 8.dp
             ),
-            verticalArrangement = Arrangement.spacedBy(tokens.spacing.xxs)
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs)
         ) {
-            item { OpenSourceCard(githubUrl = AppConstants.GITHUB_URL) }
+            item {
+                Box(Modifier.padding(sidePadding)) { OpenSourceCard(githubUrl = GITHUB_URL) }
+            }
 
-            item { AttributionCarousel() }
+            // Inset inside the pager instead, so the cards line up with the rest at rest but
+            // slide out to the screen edges while scrolling
+            item { AttributionCarousel(contentPadding = sidePadding) }
 
             item {
-                SectionHeader(
-                    title = "Libraries We Use",
-                    icon = Icons.Default.IntegrationInstructions
-                )
+                Box(Modifier.padding(sidePadding)) {
+                    SectionHeader(
+                        title = stringResource(R.string.attributions_libraries),
+                        icon = Icons.Default.IntegrationInstructions,
+                        // Sessions' header spacing: flush with the rows, 16dp above and 8dp below
+                        compact = true,
+                        startPadding = 0.dp
+                    )
+                }
             }
 
             itemsIndexed(libraries) { index, lib ->
-                LibraryItem(
-                    lib = lib,
-                    shape = itemShape(index, libraries.size)
-                )
+                Box(Modifier.padding(sidePadding)) {
+                    LibraryItem(
+                        lib = lib,
+                        shape = itemShape(index, libraries.size)
+                    )
+                }
             }
         }
     }

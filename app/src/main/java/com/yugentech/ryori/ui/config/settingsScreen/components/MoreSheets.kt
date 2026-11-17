@@ -1,5 +1,8 @@
 package com.yugentech.ryori.ui.config.settingsScreen.components
 
+import com.yugentech.ryori.R
+import com.yugentech.ryori.theme.SheetTheme
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -115,97 +118,99 @@ fun EditNameSheet(
         focusRequester.requestFocus()
     }
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        dragHandle = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = {}
-                    )
-                    .padding(vertical = 22.dp),
-                contentAlignment = Alignment.Center
-            ) {
+    SheetTheme {
+        ModalBottomSheet(
+            onDismissRequest = onDismiss,
+            sheetState = sheetState,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            dragHandle = {
                 Box(
                     modifier = Modifier
-                        .size(width = 32.dp, height = 6.dp)
-                        .background(
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                            shape = CircleShape
+                        .fillMaxWidth()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {}
                         )
-                )
-            }
-        }
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 24.dp)
-                .imePadding(),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
-            Text(
-                text = "Change Your Name",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            TextField(
-                value = textFieldValue,
-                onValueChange = {
-                    if (it.text.length <= SettingsRepository.MAX_NAME_LENGTH) textFieldValue = it
-                },
-                label = { Text("Chef Name") },
-                supportingText = {
-                    Text(
-                        text = "${currentText.length} / ${SettingsRepository.MAX_NAME_LENGTH}",
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.End
+                        .padding(vertical = 22.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(width = 32.dp, height = 6.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                                shape = CircleShape
+                            )
                     )
-                },
-                singleLine = true,
+                }
+            }
+        ) {
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .focusRequester(focusRequester),
-                shape = RoundedCornerShape(MaterialTheme.corners.medium),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
-                ),
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Words,
-                    imeAction = ImeAction.Done
-                ),
-                keyboardActions = KeyboardActions(onDone = { if (canSave) save() })
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 24.dp)
+                    .imePadding(),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                // No haptic on Cancel: like every dialog, only the action button gives feedback.
-                TextButton(onClick = onDismiss) { Text("Cancel") }
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(
-                    onClick = save,
-                    enabled = canSave,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = saveContainerColor,
-                        contentColor = saveContentColor,
-                        disabledContainerColor = saveContainerColor,
-                        disabledContentColor = saveContentColor
-                    )
-                ) { Text("Save") }
+                Text(
+                    text = stringResource(R.string.chef_change_name),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                TextField(
+                    value = textFieldValue,
+                    onValueChange = {
+                        if (it.text.length <= SettingsRepository.MAX_NAME_LENGTH) textFieldValue = it
+                    },
+                    label = { Text(stringResource(R.string.chef_name_label)) },
+                    supportingText = {
+                        Text(
+                            text = "${currentText.length} / ${SettingsRepository.MAX_NAME_LENGTH}",
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.End
+                        )
+                    },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(focusRequester),
+                    shape = RoundedCornerShape(MaterialTheme.corners.medium),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    ),
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Words,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(onDone = { if (canSave) save() })
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // No haptic on Cancel: like every dialog, only the action button gives feedback.
+                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = save,
+                        enabled = canSave,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = saveContainerColor,
+                            contentColor = saveContentColor,
+                            disabledContainerColor = saveContainerColor,
+                            disabledContentColor = saveContentColor
+                        )
+                    ) { Text(stringResource(R.string.save)) }
+                }
             }
         }
     }
@@ -261,7 +266,7 @@ fun ConfirmDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.cancel), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     )

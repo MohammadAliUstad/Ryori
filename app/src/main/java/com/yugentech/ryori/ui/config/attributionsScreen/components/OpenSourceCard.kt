@@ -1,5 +1,11 @@
 package com.yugentech.ryori.ui.config.attributionsScreen.components
 
+import com.yugentech.ryori.R
+import com.yugentech.ryori.theme.tokens.icons
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material3.Icon
+import androidx.compose.ui.res.stringResource
 import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,13 +18,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Code
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -28,15 +31,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.core.net.toUri
-import com.yugentech.ryori.theme.tokens.LocalDesignTokens
+import com.yugentech.ryori.theme.tokens.components
+import com.yugentech.ryori.theme.tokens.corners
+import com.yugentech.ryori.theme.tokens.spacing
 
 @Composable
 fun OpenSourceCard(githubUrl: String) {
     val context = LocalContext.current
-    val tokens = LocalDesignTokens.current
 
     Card(
-        shape = RoundedCornerShape(tokens.corners.extraLarge),
+        shape = RoundedCornerShape(MaterialTheme.corners.extraLarge),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer
         ),
@@ -45,35 +49,36 @@ fun OpenSourceCard(githubUrl: String) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(tokens.spacing.l),
-            verticalArrangement = Arrangement.spacedBy(tokens.spacing.m)
+                .padding(MaterialTheme.spacing.l),
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.m)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.primaryContainer,
-                    modifier = Modifier.size(tokens.components.imageSizeSmall)
+                    modifier = Modifier.size(MaterialTheme.components.imageSizeSmall)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
-                            imageVector = Icons.Default.Code,
+                            imageVector = Icons.Filled.Code,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(MaterialTheme.icons.large)
                         )
                     }
                 }
 
-                Spacer(Modifier.width(tokens.spacing.m))
+                Spacer(Modifier.width(MaterialTheme.spacing.m))
 
                 Column {
                     Text(
-                        "Ryori is Open Source",
+                        stringResource(R.string.credit_oss_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        "Licensed under Apache 2.0",
+                        stringResource(R.string.credit_oss_subtitle),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -81,7 +86,7 @@ fun OpenSourceCard(githubUrl: String) {
             }
 
             Text(
-                "The source code is available on GitHub. You are free to view, learn from, and modify the code for personal use.",
+                stringResource(R.string.credit_oss_body),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -92,13 +97,13 @@ fun OpenSourceCard(githubUrl: String) {
                     context.startActivity(intent)
                 },
                 modifier = Modifier.align(Alignment.End),
-                shape = RoundedCornerShape(tokens.corners.medium),
+                shape = RoundedCornerShape(MaterialTheme.corners.medium),
                 colors = ButtonDefaults.filledTonalButtonColors(
                     containerColor = MaterialTheme.colorScheme.tertiaryContainer,
                     contentColor = MaterialTheme.colorScheme.onTertiaryContainer
                 )
             ) {
-                Text("View Source Code")
+                Text(stringResource(R.string.credit_oss_action))
             }
         }
     }

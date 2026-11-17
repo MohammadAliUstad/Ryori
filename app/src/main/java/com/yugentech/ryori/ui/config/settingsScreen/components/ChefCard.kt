@@ -1,5 +1,8 @@
 package com.yugentech.ryori.ui.config.settingsScreen.components
 
+import com.yugentech.ryori.R
+import androidx.compose.ui.res.stringResource
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -61,7 +64,7 @@ fun ChefCard(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Hello,",
+                        text = stringResource(R.string.chef_hello),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -74,7 +77,7 @@ fun ChefCard(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = chefRank(stats.recipesViewed),
+                        text = stringResource(chefRank(stats.recipesViewed)),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(top = MaterialTheme.spacing.xxs)
@@ -93,7 +96,7 @@ fun ChefCard(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Edit,
-                        contentDescription = "Edit name",
+                        contentDescription = stringResource(R.string.chef_edit_name),
                         modifier = Modifier.size(MaterialTheme.icons.mediumSmall)
                     )
                 }
@@ -103,19 +106,19 @@ fun ChefCard(
         Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs)) {
             StatTile(
                 value = compactCount(stats.recipesViewed),
-                label = "Recipes viewed",
+                label = stringResource(R.string.chef_stat_viewed),
                 index = 0,
                 modifier = Modifier.weight(1f)
             )
             StatTile(
                 value = compactCount(stats.ingredientsTicked),
-                label = "Ingredients ticked",
+                label = stringResource(R.string.chef_stat_ticked),
                 index = 1,
                 modifier = Modifier.weight(1f)
             )
             StatTile(
-                value = stats.favouriteCuisine ?: "None yet",
-                label = "Favourite cuisine",
+                value = stats.favouriteCuisine ?: stringResource(R.string.chef_stat_none_yet),
+                label = stringResource(R.string.chef_stat_cuisine),
                 index = 2,
                 modifier = Modifier.weight(1f)
             )
@@ -179,12 +182,13 @@ private fun StatTile(
 }
 
 // A playful title that grows with the number of recipes opened.
-private fun chefRank(recipesViewed: Long): String = when {
-    recipesViewed >= 100 -> "Master chef"
-    recipesViewed >= 50 -> "Head chef"
-    recipesViewed >= 20 -> "Sous chef"
-    recipesViewed >= 5 -> "Home cook"
-    else -> "Kitchen newbie"
+@StringRes
+private fun chefRank(recipesViewed: Long): Int = when {
+    recipesViewed >= 100 -> R.string.chef_rank_master
+    recipesViewed >= 50 -> R.string.chef_rank_head
+    recipesViewed >= 20 -> R.string.chef_rank_sous
+    recipesViewed >= 5 -> R.string.chef_rank_home
+    else -> R.string.chef_rank_newbie
 }
 
 private fun compactCount(count: Long): String = when {

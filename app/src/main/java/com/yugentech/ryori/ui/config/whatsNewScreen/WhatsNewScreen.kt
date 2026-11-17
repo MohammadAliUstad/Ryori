@@ -1,5 +1,8 @@
 package com.yugentech.ryori.ui.config.whatsNewScreen
 
+import com.yugentech.ryori.R
+import androidx.compose.ui.res.stringResource
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,7 +31,9 @@ import androidx.compose.material.icons.rounded.LightMode
 import androidx.compose.material.icons.rounded.LocalBar
 import androidx.compose.material.icons.rounded.NewReleases
 import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.TravelExplore
+import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -56,60 +61,70 @@ import com.yugentech.ryori.ui.main.mainScreen.components.itemShape
 
 private data class WhatsNewItem(
     val icon: ImageVector,
-    val title: String,
-    val body: String
+    @param:StringRes val title: Int,
+    @param:StringRes val body: Int
 )
 
 private val whatsNew = listOf(
     WhatsNewItem(
         Icons.Rounded.Home,
-        "A Home that inspires",
-        "A featured carousel, a cuisine and a category of the day, and a Surprise me button for when you can't decide."
+        R.string.whats_new_1_title,
+        R.string.whats_new_1_body
     ),
     WhatsNewItem(
         Icons.Rounded.TravelExplore,
-        "Explore every kitchen",
-        "Browse hundreds of recipes by category, cuisine or ingredient, or search for one by name."
+        R.string.whats_new_2_title,
+        R.string.whats_new_2_body
     ),
     WhatsNewItem(
         Icons.Rounded.Checklist,
-        "Cook along",
-        "Clear step-by-step instructions, with ingredients you can tick off as you go."
+        R.string.whats_new_3_title,
+        R.string.whats_new_3_body
     ),
     WhatsNewItem(
         Icons.Rounded.LocalBar,
-        "Mocktails",
-        "Non-alcoholic drinks sit right next to the meals, so there's something for every glass."
+        R.string.whats_new_4_title,
+        R.string.whats_new_4_body
     ),
     WhatsNewItem(
         Icons.Rounded.Eco,
-        "Vegetarian mode",
-        "One switch hides meat and seafood across Home, Explore, search and suggestions."
+        R.string.whats_new_5_title,
+        R.string.whats_new_5_body
     ),
     WhatsNewItem(
         Icons.Rounded.EmojiPeople,
-        "Your chef profile",
-        "Set your name and watch your kitchen stats grow as you cook."
+        R.string.whats_new_6_title,
+        R.string.whats_new_6_body
     ),
     WhatsNewItem(
         Icons.Rounded.History,
-        "Recently viewed",
-        "Every recipe you open is kept, so the one from last night is always a tap away."
+        R.string.whats_new_7_title,
+        R.string.whats_new_7_body
     ),
     WhatsNewItem(
         Icons.Rounded.LightMode,
-        "Keep screen on",
-        "No more tapping the screen with floury fingers while you follow a recipe."
+        R.string.whats_new_8_title,
+        R.string.whats_new_8_body
     ),
     WhatsNewItem(
         Icons.Rounded.CloudOff,
-        "Works offline",
-        "Recipes you've opened are saved on your device, so they load instantly, even without a connection."
+        R.string.whats_new_9_title,
+        R.string.whats_new_9_body
     ),
     WhatsNewItem(
         Icons.Rounded.Palette,
-        "Make it yours",
-        "Themes, colors and gentle haptics to make Ryori feel like your own kitchen."
+        R.string.whats_new_10_title,
+        R.string.whats_new_10_body
+    ),
+    WhatsNewItem(
+        Icons.Rounded.Translate,
+        R.string.whats_new_11_title,
+        R.string.whats_new_11_body
+    ),
+    WhatsNewItem(
+        Icons.Rounded.Share,
+        R.string.whats_new_12_title,
+        R.string.whats_new_12_body
     )
 )
 
@@ -138,9 +153,9 @@ fun WhatsNewScreen(onNavigateBack: () -> Unit) {
             LargeTopAppBar(
                 title = {
                     Column {
-                        Text("What's There")
+                        Text(stringResource(R.string.settings_whats_there))
                         Text(
-                            text = versionName?.let { "Version $it" } ?: "Everything Ryori can do",
+                            text = versionName?.let { stringResource(R.string.whats_new_version, it) } ?: stringResource(R.string.settings_whats_there_subtitle),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -148,7 +163,7 @@ fun WhatsNewScreen(onNavigateBack: () -> Unit) {
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 scrollBehavior = scrollBehavior,
@@ -168,7 +183,7 @@ fun WhatsNewScreen(onNavigateBack: () -> Unit) {
                 start = MaterialTheme.spacing.m,
                 end = MaterialTheme.spacing.m,
                 top = innerPadding.calculateTopPadding(),
-                bottom = navBarPadding.calculateBottomPadding()
+                bottom = navBarPadding.calculateBottomPadding() + 8.dp
             ),
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs)
         ) {
@@ -198,12 +213,12 @@ fun WhatsNewScreen(onNavigateBack: () -> Unit) {
                     }
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = item.title,
+                            text = stringResource(item.title),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold
                         )
                         Text(
-                            text = item.body,
+                            text = stringResource(item.body),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

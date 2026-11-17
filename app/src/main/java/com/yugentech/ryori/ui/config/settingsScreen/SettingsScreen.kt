@@ -1,5 +1,8 @@
 package com.yugentech.ryori.ui.config.settingsScreen
 
+import androidx.compose.ui.res.pluralStringResource
+import com.yugentech.ryori.ui.main.mainScreen.components.ScrimTopAppBar
+import com.yugentech.ryori.localization.AppLocale
 import android.text.format.Formatter
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Arrangement
@@ -10,17 +13,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ExitToApp
-import androidx.compose.material.icons.outlined.CleaningServices
-import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Kitchen
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Storage
+import androidx.compose.material.icons.rounded.Eco
+import androidx.compose.material.icons.rounded.LightMode
+import androidx.compose.material.icons.rounded.Vibration
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -61,9 +64,11 @@ private data class AboutRow(val title: String, val subtitle: String, val onClick
 fun MoreScreen(
     onAbout: () -> Unit,
     onAppearance: () -> Unit,
+    onLanguage: () -> Unit = {},
     onRecentlyViewed: () -> Unit,
     onWhatsNew: () -> Unit,
     onMoreApps: () -> Unit,
+    onReplayOnboarding: () -> Unit = {},
     contentPadding: PaddingValues = PaddingValues(0.dp),
     viewModel: MoreViewModel = koinViewModel()
 ) {
@@ -86,27 +91,24 @@ fun MoreScreen(
     }
 
     val aboutRows = listOf(
-        AboutRow("About Ryori", stringResource(R.string.version), onAbout),
-        AboutRow("What's There", "Everything Ryori can do", onWhatsNew),
-        AboutRow("More from us", "Explore our other apps") { show(MoreOverlay.MORE_APPS) }
+        AboutRow(stringResource(R.string.settings_about_ryori), stringResource(R.string.version), onAbout),
+        AboutRow(stringResource(R.string.settings_whats_there), stringResource(R.string.settings_whats_there_subtitle), onWhatsNew),
+        AboutRow(stringResource(R.string.settings_replay_intro), stringResource(R.string.settings_replay_intro_subtitle), onReplayOnboarding),
+        AboutRow(stringResource(R.string.settings_more_from_us), stringResource(R.string.settings_more_from_us_subtitle)) { show(MoreOverlay.MORE_APPS) }
     )
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            TopAppBar(
+            // Transparent like Home's: a scrim fades in once content scrolls under it
+            ScrimTopAppBar(
                 title = {
                     Text(
-                        text = "Settings",
+                        text = stringResource(R.string.tab_settings),
                         style = MaterialTheme.typography.headlineLarge,
                         fontWeight = FontWeight.Bold
                     )
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface,
-                ),
                 scrollBehavior = scrollBehavior
             )
         },
@@ -132,14 +134,13 @@ fun MoreScreen(
                 }
     
                 // --- Your kitchen ---
-                item { SectionHeader(icon = Icons.Rounded.Kitchen, title = "Your Kitchen") }
+                item { SectionHeader(icon = Icons.Rounded.Kitchen, title = stringResource(R.string.settings_section_kitchen)) }
                 item {
                     SettingsListItem(
-                        title = "Recently viewed",
+                        title = stringResource(R.string.settings_recently_viewed),
                         subtitle = when (uiState.recentCount) {
-                            0 -> "Recipes you open will show up here"
-                            1 -> "1 recipe"
-                            else -> "${uiState.recentCount} recipes"
+                            0 -> stringResource(R.string.settings_recently_viewed_empty)
+                            else -> pluralStringResource(R.plurals.settings_recent_count, uiState.recentCount, uiState.recentCount)
                         },
                         index = 0,
                         totalCount = 3,
@@ -148,9 +149,10 @@ fun MoreScreen(
                 }
                 item {
                     SettingsSwitchItem(
-                        title = "Vegetarian mode",
-                        subtitle = "Hide meat and seafood dishes everywhere",
+                        title = stringResource(R.string.settings_vegetarian),
+                        subtitle = stringResource(R.string.settings_vegetarian_subtitle),
                         checked = settings.vegetarianMode,
+                        checkedIcon = Icons.Rounded.Eco,
                         index = 1,
                         totalCount = 3,
                         onCheckedChange = { toggle(it, viewModel::setVegetarianMode) },
@@ -159,9 +161,10 @@ fun MoreScreen(
                 }
                 item {
                     SettingsSwitchItem(
-                        title = "Keep screen on",
-                        subtitle = "No dimming while a recipe is open",
+                        title = stringResource(R.string.settings_keep_screen_on),
+                        subtitle = stringResource(R.string.settings_keep_screen_on_subtitle),
                         checked = settings.keepScreenOn,
+                        checkedIcon = Icons.Rounded.LightMode,
                         index = 2,
                         totalCount = 3,
                         onCheckedChange = { toggle(it, viewModel::setKeepScreenOn) },
@@ -170,37 +173,47 @@ fun MoreScreen(
                 }
     
                 // --- Appearance ---
-                item { SectionHeader(icon = Icons.Rounded.Palette, title = "Appearance") }
+                item { SectionHeader(icon = Icons.Rounded.Palette, title = stringResource(R.string.settings_section_appearance)) }
                 item {
                     SettingsListItem(
-                        title = "Theme & Colors",
-                        subtitle = "Customize the app's look and feel",
+                        title = stringResource(R.string.settings_theme_colors),
+                        subtitle = stringResource(R.string.settings_theme_colors_subtitle),
                         index = 0,
-                        totalCount = 2,
+                        totalCount = 3,
                         onClick = onAppearance
                     )
                 }
                 item {
-                    SettingsSwitchItem(
-                        title = "Haptic feedback",
-                        subtitle = "Gentle vibrations on taps and toggles",
-                        checked = settings.hapticsEnabled,
+                    SettingsListItem(
+                        title = stringResource(R.string.language_title),
+                        subtitle = AppLocale.current(context)?.nativeName ?: stringResource(R.string.language_system_default),
                         index = 1,
-                        totalCount = 2,
+                        totalCount = 3,
+                        onClick = onLanguage
+                    )
+                }
+                item {
+                    SettingsSwitchItem(
+                        title = stringResource(R.string.settings_haptics),
+                        subtitle = stringResource(R.string.settings_haptics_subtitle),
+                        checked = settings.hapticsEnabled,
+                        checkedIcon = Icons.Rounded.Vibration,
+                        index = 2,
+                        totalCount = 3,
                         onCheckedChange = { toggle(it, viewModel::setHaptics) },
                         onClick = { toggle(!settings.hapticsEnabled, viewModel::setHaptics) }
                     )
                 }
     
                 // --- Storage ---
-                item { SectionHeader(icon = Icons.Rounded.Storage, title = "Storage") }
+                item { SectionHeader(icon = Icons.Rounded.Storage, title = stringResource(R.string.settings_section_storage)) }
                 item {
                     SettingsListItem(
-                        title = "Clear cache",
+                        title = stringResource(R.string.settings_clear_cache),
                         subtitle = if (uiState.cacheSizeBytes > 0) {
-                            "${Formatter.formatShortFileSize(context, uiState.cacheSizeBytes)} of recipes saved for offline use"
+                            stringResource(R.string.settings_clear_cache_subtitle, Formatter.formatShortFileSize(context, uiState.cacheSizeBytes))
                         } else {
-                            "Nothing cached yet"
+                            stringResource(R.string.settings_clear_cache_empty)
                         },
                         index = 0,
                         totalCount = 2,
@@ -209,8 +222,8 @@ fun MoreScreen(
                 }
                 item {
                     SettingsListItem(
-                        title = "Clear recently viewed",
-                        subtitle = "Your kitchen stats are kept",
+                        title = stringResource(R.string.settings_clear_recent),
+                        subtitle = stringResource(R.string.settings_clear_recent_subtitle),
                         index = 1,
                         totalCount = 2,
                         onClick = { show(MoreOverlay.CLEAR_RECENT) }
@@ -218,7 +231,7 @@ fun MoreScreen(
                 }
     
                 // --- About ---
-                item { SectionHeader(icon = Icons.Rounded.Info, title = "About") }
+                item { SectionHeader(icon = Icons.Rounded.Info, title = stringResource(R.string.about)) }
                 aboutRows.forEachIndexed { index, row ->
                     item {
                         SettingsListItem(
@@ -232,11 +245,11 @@ fun MoreScreen(
                 }
     
                 // --- App ---
-                item { SectionHeader(icon = Icons.AutoMirrored.Rounded.ExitToApp, title = "App") }
+                item { SectionHeader(icon = Icons.AutoMirrored.Rounded.ExitToApp, title = stringResource(R.string.settings_section_app)) }
                 item {
                     SettingsListItem(
-                        title = "Exit",
-                        subtitle = "Close the Ryori app",
+                        title = stringResource(R.string.settings_exit),
+                        subtitle = stringResource(R.string.settings_exit_subtitle),
                         index = 0,
                         totalCount = 1,
                         onClick = { show(MoreOverlay.EXIT) }
@@ -246,7 +259,7 @@ fun MoreScreen(
 
             // A setting that failed to save (e.g. storage full).
             ToastMessage(
-                message = notice,
+                message = notice?.let { stringResource(it) },
                 onDismiss = viewModel::dismissNotice,
                 modifier = Modifier
                     .align(Alignment.TopCenter)
@@ -266,18 +279,18 @@ fun MoreScreen(
         )
 
         MoreOverlay.CLEAR_CACHE -> ConfirmDialog(
-            title = "Clear cache?",
-            message = "Saved recipes and lists will be downloaded again next time you open them. Your stats and settings stay.",
-            confirmLabel = "Clear",
+            title = stringResource(R.string.settings_clear_cache_title),
+            message = stringResource(R.string.settings_clear_cache_message),
+            confirmLabel = stringResource(R.string.clear),
             onConfirm = viewModel::clearCache,
             destructive = true,
             onDismiss = dismiss
         )
 
         MoreOverlay.CLEAR_RECENT -> ConfirmDialog(
-            title = "Clear recently viewed?",
-            message = "This empties your recently viewed list. Your kitchen stats stay as they are.",
-            confirmLabel = "Clear",
+            title = stringResource(R.string.settings_clear_recent_title),
+            message = stringResource(R.string.settings_clear_recent_message),
+            confirmLabel = stringResource(R.string.clear),
             onConfirm = viewModel::clearRecent,
             destructive = true,
             onDismiss = dismiss

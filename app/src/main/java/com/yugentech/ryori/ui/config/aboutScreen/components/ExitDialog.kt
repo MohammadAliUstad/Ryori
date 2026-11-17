@@ -1,5 +1,7 @@
 package com.yugentech.ryori.ui.config.aboutScreen.components
 
+import com.yugentech.ryori.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ExitToApp
 import androidx.compose.runtime.Composable
@@ -12,9 +14,9 @@ fun ExitConfirmationDialog(
 ) {
     RyoriDialog(
         icon = Icons.AutoMirrored.Outlined.ExitToApp,
-        title = "Exit App",
-        message = "Are you sure you want to exit Ryori?",
-        confirmLabel = "Exit",
+        title = stringResource(R.string.exit_title),
+        message = stringResource(R.string.exit_message),
+        confirmLabel = stringResource(R.string.settings_exit),
         onConfirm = onConfirm,
         onDismiss = onDismiss
     )

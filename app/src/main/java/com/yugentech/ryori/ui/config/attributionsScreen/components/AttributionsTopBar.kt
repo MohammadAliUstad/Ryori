@@ -1,8 +1,9 @@
 package com.yugentech.ryori.ui.config.attributionsScreen.components
 
+import com.yugentech.ryori.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
@@ -13,7 +14,6 @@ import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.foundation.layout.Column
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AttributionsTopBar(
     scrollBehavior: TopAppBarScrollBehavior,
@@ -22,9 +22,9 @@ fun AttributionsTopBar(
     LargeTopAppBar(
         title = {
             Column {
-                Text("Attributions")
+                Text(stringResource(R.string.attributions_title))
                 Text(
-                    "Powered by community",
+                    stringResource(R.string.attributions_subtitle),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -32,7 +32,7 @@ fun AttributionsTopBar(
         },
         navigationIcon = {
             IconButton(onClick = onNavigateBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
             }
         },
         scrollBehavior = scrollBehavior,

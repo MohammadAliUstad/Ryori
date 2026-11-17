@@ -1,5 +1,7 @@
 package com.yugentech.ryori.ui.config.aboutScreen
 
+import com.yugentech.ryori.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.dp
 import com.yugentech.ryori.theme.tokens.spacing
 import com.yugentech.ryori.ui.config.aboutScreen.components.AppInfoCard
 import com.yugentech.ryori.ui.config.aboutScreen.about.AboutContent
@@ -75,9 +78,9 @@ fun AboutScreen(
             LargeTopAppBar(
                 title = {
                     Column {
-                        Text("About")
+                        Text(stringResource(R.string.about))
                         Text(
-                            "App information and credits",
+                            stringResource(R.string.about_subtitle),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -85,7 +88,7 @@ fun AboutScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 scrollBehavior = scrollBehavior,
@@ -110,18 +113,18 @@ fun AboutScreen(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xxs),
                 contentPadding = PaddingValues(
-                    bottom = navBarPadding.calculateBottomPadding(),
+                    bottom = navBarPadding.calculateBottomPadding() + 8.dp,
                     start = MaterialTheme.spacing.m + scaffoldPadding.calculateStartPadding(layoutDirection),
                     end = MaterialTheme.spacing.m + scaffoldPadding.calculateEndPadding(layoutDirection)
                 )
             ) {
                 item { AppInfoCard() }
 
-                item { SectionHeader(Icons.Filled.Favorite, "Connect & Support") }
+                item { SectionHeader(Icons.Filled.Favorite, stringResource(R.string.about_section_connect)) }
                 itemsIndexed(supportItems) { index, item ->
                     SettingsListItem(
-                        title = item.title,
-                        subtitle = item.subtitle,
+                        title = stringResource(item.title),
+                        subtitle = item.subtitle?.let { stringResource(it) },
                         leadingIcon = item.icon,
                         index = index,
                         totalCount = supportItems.size,
@@ -129,11 +132,11 @@ fun AboutScreen(
                     )
                 }
 
-                item { SectionHeader(Icons.Filled.ThumbUp, "Spread the Word") }
+                item { SectionHeader(Icons.Filled.ThumbUp, stringResource(R.string.about_section_spread)) }
                 itemsIndexed(communityItems) { index, item ->
                     SettingsListItem(
-                        title = item.title,
-                        subtitle = item.subtitle,
+                        title = stringResource(item.title),
+                        subtitle = item.subtitle?.let { stringResource(it) },
                         leadingIcon = item.icon,
                         index = index,
                         totalCount = communityItems.size,
@@ -141,11 +144,11 @@ fun AboutScreen(
                     )
                 }
 
-                item { SectionHeader(Icons.Filled.Info, "Legal") }
+                item { SectionHeader(Icons.Filled.Info, stringResource(R.string.about_section_legal)) }
                 itemsIndexed(legalItems) { index, item ->
                     SettingsListItem(
-                        title = item.title,
-                        subtitle = item.subtitle,
+                        title = stringResource(item.title),
+                        subtitle = item.subtitle?.let { stringResource(it) },
                         leadingIcon = item.icon,
                         index = index,
                         totalCount = legalItems.size,

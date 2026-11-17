@@ -1,24 +1,26 @@
 package com.yugentech.ryori.ui.config.attributionsScreen.components
 
+import com.yugentech.ryori.R
+import com.yugentech.ryori.theme.tokens.icons
+import com.yugentech.ryori.ui.main.mainScreen.components.TintedLottieIcon
+import androidx.compose.ui.res.stringResource
 import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.PlayCircle
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -34,7 +36,7 @@ import com.yugentech.ryori.theme.tokens.corners
 import com.yugentech.ryori.theme.tokens.spacing
 
 @Composable
-fun LordiconCreditCard() {
+fun LordiconCreditCard(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val lordiconUrl = "https://lordicon.com/"
 
@@ -43,16 +45,20 @@ fun LordiconCreditCard() {
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.secondaryContainer
         ),
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(top = MaterialTheme.spacing.s)
     ) {
+        // Fills the card when the carousel stretches it to the taller card; the button then
+        // sits at the bottom, with the text at the top
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .fillMaxHeight()
                 .padding(MaterialTheme.spacing.l),
-            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.m)
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
+            Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.m)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(
                     shape = CircleShape,
@@ -60,25 +66,25 @@ fun LordiconCreditCard() {
                     modifier = Modifier.size(MaterialTheme.components.imageSizeSmall)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Rounded.PlayCircle,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSecondary
+                        TintedLottieIcon(
+                            animation = R.raw.attribution_icon,
+                            color = MaterialTheme.colorScheme.onSecondary,
+                            modifier = Modifier.size(MaterialTheme.icons.large)
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.width(MaterialTheme.spacing.m))
+                Spacer(Modifier.width(MaterialTheme.spacing.m))
 
                 Column {
                     Text(
-                        "Animated Icons",
+                        stringResource(R.string.credit_lordicon_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                     Text(
-                        "Provided by Lordicon",
+                        stringResource(R.string.credit_lordicon_subtitle),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
                     )
@@ -86,26 +92,29 @@ fun LordiconCreditCard() {
             }
 
             Text(
-                "The animated Home and Search icons in Ryori's navigation bar are provided by Lordicon, a library of high-quality animated assets for creators.",
+                stringResource(R.string.credit_lordicon_body),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f),
                 minLines = 4,
                 overflow = TextOverflow.Ellipsis
             )
+            }
 
             FilledTonalButton(
                 onClick = {
                     val intent = Intent(Intent.ACTION_VIEW, lordiconUrl.toUri())
                     context.startActivity(intent)
                 },
-                modifier = Modifier.align(Alignment.End),
+                modifier = Modifier
+                    .align(Alignment.End)
+                    .padding(top = MaterialTheme.spacing.m),
                 shape = RoundedCornerShape(MaterialTheme.corners.medium),
                 colors = ButtonDefaults.filledTonalButtonColors(
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
-                    contentColor = MaterialTheme.colorScheme.onSurface
+                    containerColor = MaterialTheme.colorScheme.secondary,
+                    contentColor = MaterialTheme.colorScheme.onSecondary
                 )
             ) {
-                Text("Visit Lordicon")
+                Text(stringResource(R.string.credit_lordicon_action))
             }
         }
     }

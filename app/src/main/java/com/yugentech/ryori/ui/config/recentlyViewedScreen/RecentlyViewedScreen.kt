@@ -1,5 +1,7 @@
 package com.yugentech.ryori.ui.config.recentlyViewedScreen
 
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -73,13 +75,12 @@ fun RecentlyViewedScreen(
             LargeTopAppBar(
                 title = {
                     Column {
-                        Text("Recently viewed")
+                        Text(stringResource(R.string.settings_recently_viewed))
                         val count = recipes?.size ?: 0
                         Text(
                             text = when (count) {
-                                0 -> "Find your way back to recipes"
-                                1 -> "1 recipe"
-                                else -> "$count recipes"
+                                0 -> stringResource(R.string.recent_subtitle_empty)
+                                else -> pluralStringResource(R.plurals.recipes_count, count, count)
                             },
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -88,7 +89,7 @@ fun RecentlyViewedScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 actions = {
@@ -99,7 +100,7 @@ fun RecentlyViewedScreen(
                                 confirmClear = true
                             }
                         ) {
-                            Icon(Icons.Rounded.DeleteSweep, contentDescription = "Clear recently viewed")
+                            Icon(Icons.Rounded.DeleteSweep, contentDescription = stringResource(R.string.settings_clear_recent))
                         }
                     }
                 },
@@ -132,7 +133,7 @@ fun RecentlyViewedScreen(
                     start = MaterialTheme.spacing.m,
                     end = MaterialTheme.spacing.m,
                     top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.s,
-                    bottom = navBarPadding.calculateBottomPadding()
+                    bottom = navBarPadding.calculateBottomPadding() + 8.dp
                 ),
                 horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.s),
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.s),
@@ -147,9 +148,9 @@ fun RecentlyViewedScreen(
 
     if (confirmClear) {
         ConfirmDialog(
-            title = "Clear recently viewed?",
-            message = "This empties your recently viewed list. Your kitchen stats stay as they are.",
-            confirmLabel = "Clear",
+            title = stringResource(R.string.settings_clear_recent_title),
+            message = stringResource(R.string.settings_clear_recent_message),
+            confirmLabel = stringResource(R.string.clear),
             onConfirm = viewModel::clear,
             destructive = true,
             onDismiss = { confirmClear = false }
@@ -171,19 +172,19 @@ private fun EmptyRecent(modifier: Modifier = Modifier) {
         ) {
             Image(
                 painter = painterResource(R.drawable.whoa),
-                contentDescription = "No recently viewed recipes",
+                contentDescription = stringResource(R.string.recent_empty_cd),
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.size(240.dp)
             )
             Spacer(Modifier.height(24.dp))
             Text(
-                text = "Nothing cooked up yet",
+                text = stringResource(R.string.recent_empty_title),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "Recipes you open while browsing\nwill appear here.",
+                text = stringResource(R.string.recent_empty_message),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
