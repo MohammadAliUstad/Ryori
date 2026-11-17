@@ -1,5 +1,6 @@
 package com.yugentech.ryori.theme
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MotionScheme
 import androidx.compose.runtime.Composable
@@ -10,6 +11,7 @@ import com.yugentech.ryori.theme.builder.getColorScheme
 import com.yugentech.ryori.theme.builder.getFontFamily
 import com.yugentech.ryori.theme.builder.getTypography
 import com.yugentech.ryori.theme.config.ThemeConfiguration
+import com.yugentech.ryori.theme.config.ThemeMode
 import com.yugentech.ryori.theme.tokens.LocalDesignTokens
 import com.yugentech.ryori.theme.tokens.TokensCompact
 
@@ -23,6 +25,14 @@ fun RyoriTheme(
         themeConfiguration = themeConfiguration
     )
 
+    // AMOLED only applies in dark mode, so it's showing only when both hold (see SheetTheme)
+    val isDark = when (themeConfiguration.themeMode) {
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+    }
+    val amoledActive = isDark && themeConfiguration.isAmoledMode
+
     val currentTypography = remember(themeConfiguration.appFont) {
         getTypography(getFontFamily(themeConfiguration.appFont))
     }
@@ -31,7 +41,8 @@ fun RyoriTheme(
 
     CompositionLocalProvider(
         LocalDesignTokens provides tokens,
-        LocalHapticFeedback provides rememberGatedHaptics(hapticsEnabled)
+        LocalHapticFeedback provides rememberGatedHaptics(hapticsEnabled),
+        LocalAmoledActive provides amoledActive
     ) {
         MaterialTheme(
             colorScheme = colorScheme,

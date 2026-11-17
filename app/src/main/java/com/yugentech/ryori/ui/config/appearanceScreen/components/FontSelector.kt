@@ -1,8 +1,9 @@
 package com.yugentech.ryori.ui.config.appearanceScreen.components
 
+import com.yugentech.ryori.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyRow
@@ -10,57 +11,84 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.TextFields
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
-import com.yugentech.ryori.theme.viewmodel.ThemeViewModel
-import com.yugentech.ryori.ui.main.mainScreen.components.SectionHeader
+import androidx.compose.ui.unit.dp
 import com.yugentech.ryori.theme.AppFont
 import com.yugentech.ryori.theme.builder.getFontFamily
 import com.yugentech.ryori.theme.tokens.spacing
+import com.yugentech.ryori.theme.viewmodel.ThemeViewModel
+import com.yugentech.ryori.ui.main.mainScreen.components.SectionHeader
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun FontSelector(
     modifier: Modifier = Modifier,
     viewModel: ThemeViewModel
 ) {
-    val haptic = LocalHapticFeedback.current
     val currentFont by viewModel.currentFont.collectAsState()
+    val haptic = LocalHapticFeedback.current
+    val scheme = MaterialTheme.colorScheme
 
     Column(modifier = modifier.fillMaxWidth()) {
         SectionHeader(
             icon = Icons.Default.TextFields,
-            title = "App Font",
+            title = stringResource(R.string.appearance_font),
             compact = true
         )
 
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xs),
-            contentPadding = PaddingValues(horizontal = MaterialTheme.spacing.xs)
-        ) {
-            items(AppFont.entries) { font ->
-                FilterChip(
-                    selected = currentFont == font,
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
-                        viewModel.setFont(font)
-                    },
-                    label = {
-                        Text(
-                            text = font.displayName,
-                            fontFamily = getFontFamily(font),
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                )
+        // No ripple on the chips either
+        CompositionLocalProvider(LocalRippleConfiguration provides null) {
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xs),
+                contentPadding = PaddingValues(horizontal = MaterialTheme.spacing.xs)
+            ) {
+                items(AppFont.entries) { font ->
+                    val selected = currentFont == font
+                    // Plain colours, switched instantly: no fade between states
+                    val container = if (selected) scheme.secondaryContainer else Color.Transparent
+                    val content = if (selected) scheme.onSecondaryContainer else scheme.onSurfaceVariant
+                    val outline = if (selected) Color.Transparent else scheme.outlineVariant
+                    FilterChip(
+                        selected = selected,
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = container,
+                            selectedContainerColor = container,
+                            labelColor = content,
+                            selectedLabelColor = content
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = selected,
+                            borderColor = outline,
+                            selectedBorderColor = outline,
+                            borderWidth = 1.dp,
+                            selectedBorderWidth = 1.dp
+                        ),
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
+                            viewModel.setFont(font)
+                        },
+                        label = {
+                            Text(
+                                text = font.displayName,
+                                fontFamily = getFontFamily(font),
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    )
+                }
             }
         }
     }

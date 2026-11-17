@@ -1,14 +1,20 @@
 package com.yugentech.ryori.ui.config.appearanceScreen
 
+import com.yugentech.ryori.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
@@ -20,21 +26,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalLayoutDirection
+import com.yugentech.ryori.theme.tokens.spacing
+import com.yugentech.ryori.theme.viewmodel.ThemeViewModel
 import com.yugentech.ryori.ui.config.appearanceScreen.components.AmoledThemeSelector
 import com.yugentech.ryori.ui.config.appearanceScreen.components.FontSelector
 import com.yugentech.ryori.ui.config.appearanceScreen.components.ThemeColorSelector
 import com.yugentech.ryori.ui.config.appearanceScreen.components.ThemeModeSelector
-import com.yugentech.ryori.theme.viewmodel.ThemeViewModel
-import com.yugentech.ryori.theme.tokens.spacing
+import androidx.compose.ui.unit.dp
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun AppearanceScreen(
     onNavigateBack: () -> Unit,
     themeViewModel: ThemeViewModel
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val layoutDirection = LocalLayoutDirection.current
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -42,9 +49,9 @@ fun AppearanceScreen(
             LargeTopAppBar(
                 title = {
                     Column {
-                        Text("Appearance")
+                        Text(stringResource(R.string.settings_section_appearance))
                         Text(
-                            "Choose your preferred look",
+                            stringResource(R.string.appearance_subtitle),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -54,7 +61,7 @@ fun AppearanceScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.back)
                         )
                     }
                 },
@@ -68,41 +75,30 @@ fun AppearanceScreen(
             )
         },
         containerColor = MaterialTheme.colorScheme.background
-    ) { paddingValues ->
+    ) { scaffoldPadding ->
+        val navBarPadding = WindowInsets.navigationBars.asPaddingValues()
+
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = scaffoldPadding.calculateTopPadding()),
             contentPadding = PaddingValues(
-                top = paddingValues.calculateTopPadding(),
-                bottom = paddingValues.calculateBottomPadding(),
-                start = MaterialTheme.spacing.m,
-                end = MaterialTheme.spacing.m
+                bottom = navBarPadding.calculateBottomPadding() + 8.dp,
+                start = MaterialTheme.spacing.m + scaffoldPadding.calculateStartPadding(layoutDirection),
+                end = MaterialTheme.spacing.m + scaffoldPadding.calculateEndPadding(layoutDirection)
             ),
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xs),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            item {
-                ThemeModeSelector(
-                    themeViewModel = themeViewModel
-                )
-            }
-
+            item { ThemeModeSelector(themeViewModel = themeViewModel) }
             item {
                 AmoledThemeSelector(
-                    viewModel = themeViewModel
+                    viewModel = themeViewModel,
+                    modifier = Modifier.padding(top = MaterialTheme.spacing.s)
                 )
             }
-
-            item {
-                FontSelector(
-                    viewModel = themeViewModel
-                )
-            }
-
-            item {
-                ThemeColorSelector(
-                    viewModel = themeViewModel
-                )
-            }
+            item { FontSelector(viewModel = themeViewModel) }
+            item { ThemeColorSelector(viewModel = themeViewModel) }
         }
     }
 }

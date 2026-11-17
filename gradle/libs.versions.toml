@@ -23,7 +23,7 @@ composeBom = "2026.06.00"
 materialIconsExtended = "1.7.8"
 navigationCompose = "2.9.8"
 timber = "5.0.1"
-material3 = "1.5.0-alpha22"
+material3 = "1.5.0-alpha18"
 
 [libraries]
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }

@@ -4,9 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.yugentech.ryori.data.settings.SettingsRepository
 import com.yugentech.ryori.theme.AppFont
-import com.yugentech.ryori.theme.config.ColorTheme
 import com.yugentech.ryori.theme.config.ThemeConfiguration
-import com.yugentech.ryori.theme.config.ThemeMode
 import com.yugentech.ryori.theme.repository.ThemeRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -30,31 +28,24 @@ class ThemeViewModel(
             initialValue = true
         )
 
-    // Internal mutable state for the current theme configuration
-    private val _themeConfiguration = MutableStateFlow(
-        ThemeConfiguration(
-            ThemeMode.LIGHT, ColorTheme.DYNAMIC,
-            useDynamicColors = true,
-            isAmoledMode = false,
-            appFont = AppFont.Google
-        )
-    )
+    // Internal mutable state initialized with the repository's current configuration (as in
+    // Sessions), so a new instance, such as the Appearance screen's, starts on the saved theme
+    private val _themeConfiguration = MutableStateFlow(repository.themeConfiguration.value)
 
     // Public read-only stream of theme configuration
     val themeConfiguration: StateFlow<ThemeConfiguration> = _themeConfiguration.asStateFlow()
 
     // False until the saved theme has been read once. MainActivity keeps the splash screen up
-    // until then, so the app never draws with the placeholder (light) theme first.
-    private val _isLoaded = MutableStateFlow(false)
-    val isLoaded: StateFlow<Boolean> = _isLoaded.asStateFlow()
+    // until then, so the app never draws with the default theme first.
+    val isLoaded: StateFlow<Boolean> = repository.isLoaded
 
     // Derived stream specifically for the current font, helpful for UI logic
     val currentFont: StateFlow<AppFont> = _themeConfiguration
         .map { it.appFont }
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = AppFont.Google
+            started = SharingStarted.Eagerly,
+            initialValue = _themeConfiguration.value.appFont
         )
 
     init {
@@ -62,7 +53,6 @@ class ThemeViewModel(
         viewModelScope.launch {
             repository.themeConfiguration.collect { config ->
                 _themeConfiguration.value = config
-                _isLoaded.value = true
             }
         }
     }
