@@ -18,11 +18,8 @@
 </table>
 
 <p align="center">
+  <a href="https://play.google.com/store/apps/details?id=com.yugentech.ryori"><img alt="Get it on Google Play" src="badges/playstore.png" width="200"/></a>
   <a href="https://github.com/MohammadAliUstad/Ryori/releases"><img alt="Get it on Github" src="badges/github.png" width="200"/></a>
-</p>
-
-<p align="center">
-  <b>Coming soon to Google Play</b>
 </p>
 
 <br/>
