@@ -3,6 +3,7 @@ package com.yugentech.ryori.di.module
 import com.yugentech.ryori.api.viewmodel.ExploreViewModel
 import com.yugentech.ryori.api.viewmodel.HomeViewModel
 import com.yugentech.ryori.api.viewmodel.MoreViewModel
+import com.yugentech.ryori.api.viewmodel.OnboardingViewModel
 import com.yugentech.ryori.api.viewmodel.RecentlyViewedViewModel
 import com.yugentech.ryori.api.viewmodel.RecipeListViewModel
 import com.yugentech.ryori.api.viewmodel.RecipeViewModel
@@ -44,6 +45,12 @@ val viewModelModule = module {
             settingsRepository = get(),
             kitchen = get(),
             api = get()
+        )
+    }
+
+    viewModel {
+        OnboardingViewModel(
+            settings = get()
         )
     }
 

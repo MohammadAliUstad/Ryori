@@ -32,6 +32,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         val HAPTICS = booleanPreferencesKey("haptics_enabled")
         val VEGETARIAN = booleanPreferencesKey("vegetarian_mode")
         val KEEP_SCREEN_ON = booleanPreferencesKey("keep_screen_on")
+        val ONBOARDING_DONE = booleanPreferencesKey("onboarding_completed")
     }
 
     // An unreadable preferences file falls back to the defaults instead of crashing the app.
@@ -51,6 +52,17 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         .distinctUntilChanged()
 
     val vegetarianMode: Flow<Boolean> = settings.map { it.vegetarianMode }.distinctUntilChanged()
+
+    // Whether the first-run intro has been finished (or skipped).
+    val onboardingCompleted: Flow<Boolean> = dataStore.data
+        .catch { e ->
+            if (e !is IOException) throw e
+            emit(emptyPreferences())
+        }
+        .map { it[Keys.ONBOARDING_DONE] ?: false }
+        .distinctUntilChanged()
+
+    suspend fun setOnboardingCompleted() = dataStore.edit { it[Keys.ONBOARDING_DONE] = true }
 
     suspend fun current(): UserSettings = settings.first()
 

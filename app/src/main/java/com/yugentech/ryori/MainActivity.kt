@@ -1,5 +1,6 @@
 package com.yugentech.ryori
 
+import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -11,13 +12,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
+import com.yugentech.ryori.api.viewmodel.OnboardingViewModel
+import com.yugentech.ryori.localization.AppLocale
 import com.yugentech.ryori.navigation.host.AppNavHost
 import com.yugentech.ryori.theme.RyoriTheme
+import com.yugentech.ryori.theme.ThemeRevealHost
 import com.yugentech.ryori.theme.config.ThemeMode
 import com.yugentech.ryori.theme.viewmodel.ThemeViewModel
 import kotlin.time.Duration.Companion.milliseconds
@@ -28,7 +33,13 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MainActivity : ComponentActivity() {
 
+    // Below Android 13, the language picked in the app (see AppLocale); from 13 the system's
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLocale.wrap(newBase))
+    }
+
     private val themeViewModel: ThemeViewModel by viewModel()
+    private val onboardingViewModel: OnboardingViewModel by viewModel()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Same order as Quill: the splash screen is installed before super.onCreate.
@@ -45,13 +56,15 @@ class MainActivity : ComponentActivity() {
 
         super.onCreate(savedInstanceState)
         splashScreen.setKeepOnScreenCondition {
-            !animationReady.value || !themeViewModel.isLoaded.value
+            !animationReady.value || !themeViewModel.isLoaded.value ||
+                onboardingViewModel.showOnboarding.value == null
         }
 
         setContent {
             val navController = rememberNavController()
             val themeConfiguration by themeViewModel.themeConfiguration.collectAsStateWithLifecycle()
             val hapticsEnabled by themeViewModel.hapticsEnabled.collectAsStateWithLifecycle()
+            val showOnboarding by onboardingViewModel.showOnboarding.collectAsStateWithLifecycle()
 
             val darkTheme = when (themeConfiguration.themeMode) {
                 ThemeMode.LIGHT -> false
@@ -73,13 +86,25 @@ class MainActivity : ComponentActivity() {
             )
 
             RyoriTheme(themeConfiguration = themeConfiguration, hapticsEnabled = hapticsEnabled) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    AppNavHost(
-                        navController = navController
-                    )
+                // Outermost, so a light/dark wipe covers the whole screen.
+                ThemeRevealHost {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background
+                    ) {
+                        // Waits for the saved flag (the splash covers that), so the start screen is
+                        // picked once and never swaps under the user.
+                        val firstRun = showOnboarding
+                        if (firstRun != null) {
+                            // Fixed at first composition: finishing the intro navigates away itself.
+                            val startOnOnboarding = remember { firstRun }
+                            AppNavHost(
+                                navController = navController,
+                                showOnboarding = startOnOnboarding,
+                                onOnboardingComplete = onboardingViewModel::complete
+                            )
+                        }
+                    }
                 }
             }
         }
