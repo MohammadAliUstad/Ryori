@@ -4,7 +4,6 @@ package com.yugentech.ryori.ui.main.exploreScreen
 
 import com.yugentech.ryori.R
 import androidx.compose.ui.res.stringResource
-import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
@@ -42,6 +41,7 @@ import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Kitchen
 import androidx.compose.material.icons.rounded.LocalCafe
+import androidx.compose.material.icons.rounded.RestaurantMenu
 import androidx.compose.material.icons.rounded.Public
 import androidx.compose.material.icons.rounded.Restaurant
 import androidx.compose.material.icons.rounded.Search
@@ -87,13 +87,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.derivedStateOf
-import androidx.compose.material.icons.rounded.SoupKitchen
-import androidx.compose.material.icons.rounded.SetMeal
-import androidx.compose.material.icons.rounded.RamenDining
-import androidx.compose.material.icons.rounded.LocalFireDepartment
-import androidx.compose.material.icons.rounded.Eco
-import androidx.compose.material.icons.rounded.Cake
-import androidx.compose.material.icons.rounded.BreakfastDining
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SearchBar
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -102,6 +95,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.border
 import androidx.compose.animation.animateColorAsState
 import androidx.activity.compose.BackHandler
@@ -121,6 +115,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.yugentech.ryori.api.error.AppError
+import kotlinx.coroutines.launch
+import com.yugentech.ryori.theme.tokens.dimensions.AppAnimations
 import com.yugentech.ryori.api.model.domain.Area
 import com.yugentech.ryori.api.model.domain.Category
 import com.yugentech.ryori.api.model.domain.CuisineFlags
@@ -304,27 +300,18 @@ fun ExploreScreen(
                 ),
                 windowInsets = SearchBarDefaults.windowInsets
             ) {
-                if (uiState.query.isEmpty()) {
-                    SearchSuggestions(
-                        onSuggestionClick = { suggestion ->
-                            viewModel.onQueryChange(suggestion)
-                            focusManager.clearFocus()
-                        }
-                    )
-                } else {
-                    SearchResults(
-                        uiState = uiState,
-                        contentPadding = PaddingValues(
-                            top = MaterialTheme.spacing.m,
-                            bottom = contentPadding.calculateBottomPadding() + MaterialTheme.spacing.s
-                        ),
-                        onRecipeClick = { recipe ->
-                            closeSearch()
-                            onRecipeClick(recipe.type, recipe.id)
-                        },
-                        onRetry = viewModel::retrySearch
-                    )
-                }
+                SearchContent(
+                    uiState = uiState,
+                    contentPadding = PaddingValues(
+                        top = MaterialTheme.spacing.m,
+                        bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + MaterialTheme.spacing.s
+                    ),
+                    onRecipeClick = { recipe ->
+                        closeSearch()
+                        onRecipeClick(recipe.type, recipe.id)
+                    },
+                    onRetry = viewModel::retrySearch
+                )
             }
         }
 
@@ -343,93 +330,168 @@ fun ExploreScreen(
 
 private enum class ExploreMode { Error, Browse }
 
-// Shown in the expanded search before anything is typed, like Discover's suggestions. The
-// query stays English (the recipe databases are); only its label follows the app's language.
-private class SearchSuggestion(val query: String, @param:StringRes val label: Int, val icon: ImageVector)
+// --- Search -----------------------------------------------------------------------------------
 
-private val searchSuggestions = listOf(
-    SearchSuggestion("Chicken", R.string.suggest_chicken, Icons.Rounded.SetMeal),
-    SearchSuggestion("Pasta", R.string.suggest_pasta, Icons.Rounded.RamenDining),
-    SearchSuggestion("Curry", R.string.suggest_curry, Icons.Rounded.LocalFireDepartment),
-    SearchSuggestion("Salad", R.string.suggest_salad, Icons.Rounded.Eco),
-    SearchSuggestion("Soup", R.string.suggest_soup, Icons.Rounded.SoupKitchen),
-    SearchSuggestion("Cake", R.string.suggest_cake, Icons.Rounded.Cake),
-    SearchSuggestion("Pancakes", R.string.suggest_pancakes, Icons.Rounded.BreakfastDining),
-    SearchSuggestion("Smoothie", R.string.suggest_smoothie, Icons.Rounded.LocalCafe)
-)
+// What the expanded search shows. Whatever is on screen fades out before the next one fades in,
+// so old recipes never linger under the spinner, a state, or the new results.
+private sealed interface SearchView {
+    data object Prompt : SearchView
+    data object Loading : SearchView
+    data class Failed(val error: AppError) : SearchView
+    data object NoResults : SearchView
+    data class Results(val recipes: List<RecipeSummary>) : SearchView
+}
 
-@Composable
-private fun SearchSuggestions(onSuggestionClick: (String) -> Unit) {
-    val haptic = LocalHapticFeedback.current
-    LazyColumn(
-        contentPadding = PaddingValues(MaterialTheme.spacing.m),
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.s)
-    ) {
-        items(searchSuggestions, key = { it.query }) { suggestion ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(MaterialTheme.corners.medium))
-                    .clickable {
-                        haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
-                        onSuggestionClick(suggestion.query)
-                    }
-                    .padding(vertical = 12.dp, horizontal = MaterialTheme.spacing.s)
-            ) {
-                Icon(
-                    imageVector = suggestion.icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.width(MaterialTheme.spacing.m))
-                Text(
-                    text = stringResource(suggestion.label),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-        }
+private fun ExploreUiState.searchView(): SearchView {
+    val error = searchError
+    return when {
+        // Blank, like empty: the view model doesn't search spaces
+        query.isBlank() -> SearchView.Prompt
+        isSearching -> SearchView.Loading
+        // Offline or server trouble: say so rather than "No recipes found".
+        error != null -> SearchView.Failed(error)
+        searchResults.isEmpty() -> SearchView.NoResults
+        else -> SearchView.Results(searchResults)
     }
 }
 
-// --- Search -----------------------------------------------------------------------------------
-
 @Composable
-private fun SearchResults(
+private fun SearchContent(
     uiState: ExploreUiState,
     contentPadding: PaddingValues,
     onRecipeClick: (RecipeSummary) -> Unit,
     onRetry: () -> Unit
 ) {
-    when {
-        uiState.isSearching && uiState.searchResults.isEmpty() -> CenteredLoading()
+    AnimatedContent(
+        targetState = uiState.searchView(),
+        transitionSpec = {
+            fadeIn(
+                tween(
+                    durationMillis = AppAnimations.Durations.Smooth,
+                    delayMillis = AppAnimations.Durations.Rapid,
+                    easing = AppAnimations.Easings.Decelerate
+                )
+            ) togetherWith fadeOut(
+                tween(durationMillis = AppAnimations.Durations.Rapid, easing = AppAnimations.Easings.Accelerate)
+            )
+        },
+        label = "SearchContent",
+        modifier = Modifier.fillMaxSize()
+    ) { view ->
+        when (view) {
+            SearchView.Prompt -> SearchStateLayout(
+                icon = { StateIcon(Icons.Rounded.RestaurantMenu) },
+                title = stringResource(R.string.explore_prompt_title),
+                message = stringResource(R.string.explore_prompt_body)
+            )
 
-        // Offline or server trouble: say so rather than "No recipes found".
-        uiState.searchError != null -> ErrorState(error = uiState.searchError, onRetry = onRetry)
+            // In the icon's spot, with blank text keeping the layout the same height, so the
+            // spinner sits exactly where the prompt's and no results' icons do.
+            SearchView.Loading -> SearchStateLayout(
+                icon = { CircularWavyProgressIndicator() },
+                title = "",
+                message = ""
+            )
 
-        uiState.searchResults.isEmpty() -> EmptyState(
-            icon = Icons.Rounded.SearchOff,
-            title = stringResource(R.string.explore_no_results_title),
-            message = stringResource(R.string.explore_no_results_message)
-        )
+            is SearchView.Failed -> ErrorState(error = view.error, onRetry = onRetry)
 
-        else -> LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = 150.dp),
-            contentPadding = PaddingValues(
-                start = MaterialTheme.spacing.m,
-                end = MaterialTheme.spacing.m,
-                top = contentPadding.calculateTopPadding(),
-                bottom = contentPadding.calculateBottomPadding() + MaterialTheme.spacing.s
-            ),
-            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.s),
-            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.none),
-            modifier = Modifier.fillMaxSize()
-        ) {
-            gridItems(uiState.searchResults, key = { "${it.type}_${it.id}" }) { recipe ->
-                RecipeCard(recipe = recipe, onClick = onRecipeClick)
+            SearchView.NoResults -> SearchStateLayout(
+                icon = { StateIcon(Icons.Rounded.SearchOff) },
+                title = stringResource(R.string.explore_no_results_title),
+                message = stringResource(R.string.explore_no_results_message)
+            )
+
+            is SearchView.Results -> LazyVerticalGrid(
+                columns = GridCells.Adaptive(minSize = 150.dp),
+                contentPadding = PaddingValues(
+                    start = MaterialTheme.spacing.m,
+                    end = MaterialTheme.spacing.m,
+                    top = contentPadding.calculateTopPadding(),
+                    bottom = contentPadding.calculateBottomPadding()
+                ),
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.s),
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.none),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                gridItems(view.recipes, key = { "${it.type}_${it.id}" }) { recipe ->
+                    RecipeCard(recipe = recipe, onClick = onRecipeClick)
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun StateIcon(icon: ImageVector) {
+    Icon(
+        imageVector = icon,
+        contentDescription = null,
+        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
+        modifier = Modifier.size(64.dp)
+    )
+}
+
+// The one layout for the expanded search's states (the prompt before anything is typed, as in
+// Quill's Gutenberg search, no results, and loading), so they sit at the same spot: a 64dp
+// icon, a title and a two-line message, a little above centre. On appearing, the icon settles in from a
+// little smaller and the text rises a few dp just behind it.
+@Composable
+private fun SearchStateLayout(title: String, message: String, icon: @Composable () -> Unit) {
+    val iconIn = remember { Animatable(0f) }
+    val textIn = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        val spec = tween<Float>(
+            durationMillis = AppAnimations.Durations.Emphasized,
+            easing = AppAnimations.Easings.EmphasizedDecelerate
+        )
+        launch { iconIn.animateTo(1f, spec) }
+        delay(AppAnimations.Durations.Rapid.toLong())
+        textIn.animateTo(1f, spec)
+    }
+    val textModifier = Modifier.graphicsLayer {
+        alpha = textIn.value
+        translationY = (1f - textIn.value) * 8.dp.toPx()
+    }
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp)
+    ) {
+        Spacer(Modifier.weight(0.3f))
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(64.dp)
+                .graphicsLayer {
+                    val scale = 0.85f + 0.15f * iconIn.value
+                    alpha = iconIn.value
+                    scaleX = scale
+                    scaleY = scale
+                }
+        ) {
+            icon()
+        }
+        Spacer(Modifier.height(24.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
+            modifier = textModifier
+        )
+        Spacer(Modifier.height(MaterialTheme.spacing.s))
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            minLines = 2,
+            modifier = textModifier
+        )
+        Spacer(Modifier.weight(0.7f))
     }
 }
 
@@ -1002,39 +1064,3 @@ private const val PLACEHOLDER_FLAG_AREA = "Italian"
 // (a warm cache) still finishes quickly.
 private const val CUISINE_STAGGER_MILLIS = 35
 private const val CUISINE_STAGGER_MAX_STEPS = 10
-
-// --- Shared states ----------------------------------------------------------------------------
-
-@Composable
-private fun CenteredLoading() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularWavyProgressIndicator()
-    }
-}
-
-@Composable
-private fun EmptyState(icon: ImageVector, title: String, message: String) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(MaterialTheme.spacing.xl)
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(48.dp)
-        )
-        Spacer(Modifier.height(MaterialTheme.spacing.m))
-        Text(text = title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(MaterialTheme.spacing.xs))
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
-    }
-}

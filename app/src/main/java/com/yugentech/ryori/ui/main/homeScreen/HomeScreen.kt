@@ -84,6 +84,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.imageLoader
@@ -251,6 +252,8 @@ private fun HomeContent(
                 HomeSectionHeader(
                     icon = Icons.Rounded.Star,
                     title = stringResource(R.string.home_featured_today),
+                    // A little closer to the line above than the other sections are to theirs
+                    topPadding = MaterialTheme.spacing.m,
                     action = {
                         IconButton(
                             onClick = {
@@ -447,15 +450,15 @@ private fun LoadingCrossfade(
 
 @Composable
 private fun Greeting() {
-    val (greetingRes, promptRes) = remember {
+    // The line changes with the time of day.
+    val promptRes = remember {
         when (LocalTime.now().hour) {
-            in 5..11 -> R.string.greeting_morning to R.string.greeting_morning_prompt
-            in 12..16 -> R.string.greeting_afternoon to R.string.greeting_afternoon_prompt
-            in 17..21 -> R.string.greeting_evening to R.string.greeting_evening_prompt
-            else -> R.string.greeting_night to R.string.greeting_night_prompt
+            in 5..11 -> R.string.greeting_morning_prompt
+            in 12..16 -> R.string.greeting_afternoon_prompt
+            in 17..21 -> R.string.greeting_evening_prompt
+            else -> R.string.greeting_night_prompt
         }
     }
-    val greeting = stringResource(greetingRes)
     val prompt = stringResource(promptRes)
     Column(
         modifier = Modifier.padding(
@@ -464,11 +467,6 @@ private fun Greeting() {
             top = MaterialTheme.spacing.s
         )
     ) {
-        Text(
-            text = greeting,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
         Text(
             text = prompt,
             style = MaterialTheme.typography.headlineMedium,
@@ -484,6 +482,7 @@ private fun Greeting() {
 private fun HomeSectionHeader(
     icon: ImageVector,
     title: String,
+    topPadding: Dp = MaterialTheme.spacing.l,
     action: (@Composable () -> Unit)? = null
 ) {
     val fadeThrough = AppAnimations.Transitions.rememberExpressiveFadeThrough()
@@ -495,7 +494,7 @@ private fun HomeSectionHeader(
             .padding(
                 start = MaterialTheme.spacing.m,
                 end = if (action != null) MaterialTheme.spacing.xs else MaterialTheme.spacing.m,
-                top = MaterialTheme.spacing.l,
+                top = topPadding,
                 bottom = MaterialTheme.spacing.sm
             )
     ) {

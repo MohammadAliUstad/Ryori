@@ -112,13 +112,9 @@
     <string name="home_todays_favourites">आज की पसंदीदा</string>
     <string name="home_something_to_sip">पीने के लिए कुछ</string>
     <string name="home_browse_by_category">श्रेणी से देखें</string>
-    <string name="greeting_morning">सुप्रभात ☀️</string>
     <string name="greeting_morning_prompt">नाश्ते में क्या है?</string>
-    <string name="greeting_afternoon">नमस्कार 🌤️</string>
     <string name="greeting_afternoon_prompt">चलिए कुछ स्वादिष्ट सोचते हैं</string>
-    <string name="greeting_evening">शुभ संध्या 🌙</string>
     <string name="greeting_evening_prompt">आज रात क्या पकाएँ?</string>
-    <string name="greeting_night">देर रात की भूख? 🌙</string>
     <string name="greeting_night_prompt">कुछ जल्दी बनने वाला और सुकून भरा</string>
     <string name="see_all">सभी देखें</string>
     <string name="home_surprise_me">मुझे चौंकाएँ</string>
@@ -133,14 +129,9 @@
         <item quantity="other">%1$d चरण</item>
     </plurals>
     <string name="explore_search_hint">व्यंजन और पेय खोजें...</string>
-    <string name="suggest_chicken">चिकन</string>
-    <string name="suggest_pasta">पास्ता</string>
-    <string name="suggest_curry">करी</string>
-    <string name="suggest_salad">सलाद</string>
-    <string name="suggest_soup">सूप</string>
-    <string name="suggest_cake">केक</string>
-    <string name="suggest_pancakes">पैनकेक</string>
-    <string name="suggest_smoothie">स्मूदी</string>
+    <string name="explore_prompt_title">अपना अगला व्यंजन खोजें</string>
+    <string name="explore_prompt_body">दुनिया भर की रसोइयों के
+व्यंजन और पेय खोजें।</string>
     <string name="explore_no_results_title">कोई रेसिपी नहीं मिली</string>
     <string name="explore_no_results_message">\"curry\" जैसा कोई व्यंजन या \"smoothie\" जैसा कोई पेय आज़माएँ।</string>
     <string name="explore_categories">श्रेणियाँ</string>

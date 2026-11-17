@@ -111,13 +111,9 @@
     <string name="home_todays_favourites">오늘의 인기 레시피</string>
     <string name="home_something_to_sip">마실 거리</string>
     <string name="home_browse_by_category">카테고리별 둘러보기</string>
-    <string name="greeting_morning">좋은 아침이에요 ☀️</string>
     <string name="greeting_morning_prompt">아침은 뭘 먹을까요?</string>
-    <string name="greeting_afternoon">좋은 오후예요 🌤️</string>
     <string name="greeting_afternoon_prompt">맛있는 걸 계획해 봐요</string>
-    <string name="greeting_evening">좋은 저녁이에요 🌙</string>
     <string name="greeting_evening_prompt">오늘 저녁엔 뭘 요리할까요?</string>
-    <string name="greeting_night">늦은 밤 출출하세요? 🌙</string>
     <string name="greeting_night_prompt">빠르고 든든한 한 끼</string>
     <string name="see_all">모두 보기</string>
     <string name="home_surprise_me">아무거나 추천</string>
@@ -130,14 +126,9 @@
         <item quantity="other">%1$d단계</item>
     </plurals>
     <string name="explore_search_hint">요리와 음료 검색...</string>
-    <string name="suggest_chicken">치킨</string>
-    <string name="suggest_pasta">파스타</string>
-    <string name="suggest_curry">카레</string>
-    <string name="suggest_salad">샐러드</string>
-    <string name="suggest_soup">수프</string>
-    <string name="suggest_cake">케이크</string>
-    <string name="suggest_pancakes">팬케이크</string>
-    <string name="suggest_smoothie">스무디</string>
+    <string name="explore_prompt_title">다음 요리를 찾아보세요</string>
+    <string name="explore_prompt_body">전 세계 주방의
+요리와 음료를 검색하세요.</string>
     <string name="explore_no_results_title">레시피를 찾을 수 없습니다</string>
     <string name="explore_no_results_message">\"curry\" 같은 요리나 \"smoothie\" 같은 음료를 검색해 보세요.</string>
     <string name="explore_categories">카테고리</string>

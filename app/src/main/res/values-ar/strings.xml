@@ -116,13 +116,9 @@
     <string name="home_todays_favourites">مفضّلات اليوم</string>
     <string name="home_something_to_sip">شيء للارتشاف</string>
     <string name="home_browse_by_category">تصفّح حسب الفئة</string>
-    <string name="greeting_morning">صباح الخير ☀️</string>
     <string name="greeting_morning_prompt">ما الفطور اليوم؟</string>
-    <string name="greeting_afternoon">طاب يومك 🌤️</string>
     <string name="greeting_afternoon_prompt">لنخطط لشيء لذيذ</string>
-    <string name="greeting_evening">مساء الخير 🌙</string>
     <string name="greeting_evening_prompt">ماذا سنطبخ الليلة؟</string>
-    <string name="greeting_night">جوع في آخر الليل؟ 🌙</string>
     <string name="greeting_night_prompt">شيء سريع ومريح</string>
     <string name="see_all">عرض الكل</string>
     <string name="home_surprise_me">فاجئني</string>
@@ -145,14 +141,9 @@
         <item quantity="other">%1$d خطوة</item>
     </plurals>
     <string name="explore_search_hint">ابحث عن أطباق ومشروبات...</string>
-    <string name="suggest_chicken">دجاج</string>
-    <string name="suggest_pasta">معكرونة</string>
-    <string name="suggest_curry">كاري</string>
-    <string name="suggest_salad">سلطة</string>
-    <string name="suggest_soup">شوربة</string>
-    <string name="suggest_cake">كعكة</string>
-    <string name="suggest_pancakes">فطائر بان كيك</string>
-    <string name="suggest_smoothie">سموذي</string>
+    <string name="explore_prompt_title">اعثر على طبقك التالي</string>
+    <string name="explore_prompt_body">ابحث عن أطباق ومشروبات
+من مطابخ حول العالم.</string>
     <string name="explore_no_results_title">لم يتم العثور على وصفات</string>
     <string name="explore_no_results_message">جرّب طبقًا مثل \"curry\" أو مشروبًا مثل \"smoothie\".</string>
     <string name="explore_categories">الفئات</string>

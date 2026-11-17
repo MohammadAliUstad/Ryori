@@ -111,13 +111,9 @@
     <string name="home_todays_favourites">Today\'s favourites</string>
     <string name="home_something_to_sip">Something to sip</string>
     <string name="home_browse_by_category">Browse by category</string>
-    <string name="greeting_morning">Good morning ☀️</string>
     <string name="greeting_morning_prompt">What\'s for breakfast?</string>
-    <string name="greeting_afternoon">Good afternoon 🌤️</string>
     <string name="greeting_afternoon_prompt">Let\'s plan something tasty</string>
-    <string name="greeting_evening">Good evening 🌙</string>
     <string name="greeting_evening_prompt">What are we cooking tonight?</string>
-    <string name="greeting_night">Late night cravings? 🌙</string>
     <string name="greeting_night_prompt">Something quick and comforting</string>
     <string name="see_all">See all</string>
     <string name="home_surprise_me">Surprise me</string>
@@ -132,14 +128,9 @@
         <item quantity="other">%1$d steps</item>
     </plurals>
     <string name="explore_search_hint">Search dishes and drinks...</string>
-    <string name="suggest_chicken">Chicken</string>
-    <string name="suggest_pasta">Pasta</string>
-    <string name="suggest_curry">Curry</string>
-    <string name="suggest_salad">Salad</string>
-    <string name="suggest_soup">Soup</string>
-    <string name="suggest_cake">Cake</string>
-    <string name="suggest_pancakes">Pancakes</string>
-    <string name="suggest_smoothie">Smoothie</string>
+    <string name="explore_prompt_title">Find your next dish</string>
+    <string name="explore_prompt_body">Search meals and drinks from
+kitchens around the world.</string>
     <string name="explore_no_results_title">No recipes found</string>
     <string name="explore_no_results_message">Try a dish like \"curry\" or a drink like \"smoothie\".</string>
     <string name="explore_categories">Categories</string>

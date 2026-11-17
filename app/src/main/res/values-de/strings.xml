@@ -112,13 +112,9 @@
     <string name="home_todays_favourites">Lieblinge des Tages</string>
     <string name="home_something_to_sip">Etwas zum Trinken</string>
     <string name="home_browse_by_category">Nach Kategorie stöbern</string>
-    <string name="greeting_morning">Guten Morgen ☀️</string>
     <string name="greeting_morning_prompt">Was gibt\'s zum Frühstück?</string>
-    <string name="greeting_afternoon">Guten Tag 🌤️</string>
     <string name="greeting_afternoon_prompt">Lass uns etwas Leckeres planen</string>
-    <string name="greeting_evening">Guten Abend 🌙</string>
     <string name="greeting_evening_prompt">Was kochen wir heute Abend?</string>
-    <string name="greeting_night">Hunger zu später Stunde? 🌙</string>
     <string name="greeting_night_prompt">Etwas Schnelles und Wohltuendes</string>
     <string name="see_all">Alle ansehen</string>
     <string name="home_surprise_me">Überrasch mich</string>
@@ -133,14 +129,9 @@
         <item quantity="other">%1$d Schritte</item>
     </plurals>
     <string name="explore_search_hint">Gerichte und Getränke suchen...</string>
-    <string name="suggest_chicken">Hähnchen</string>
-    <string name="suggest_pasta">Pasta</string>
-    <string name="suggest_curry">Curry</string>
-    <string name="suggest_salad">Salat</string>
-    <string name="suggest_soup">Suppe</string>
-    <string name="suggest_cake">Kuchen</string>
-    <string name="suggest_pancakes">Pfannkuchen</string>
-    <string name="suggest_smoothie">Smoothie</string>
+    <string name="explore_prompt_title">Finde dein nächstes Gericht</string>
+    <string name="explore_prompt_body">Suche Gerichte und Getränke
+aus Küchen der ganzen Welt.</string>
     <string name="explore_no_results_title">Keine Rezepte gefunden</string>
     <string name="explore_no_results_message">Probier ein Gericht wie „curry“ oder ein Getränk wie „smoothie“.</string>
     <string name="explore_categories">Kategorien</string>

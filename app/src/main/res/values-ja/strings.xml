@@ -111,13 +111,9 @@
     <string name="home_todays_favourites">今日の人気レシピ</string>
     <string name="home_something_to_sip">ちょっと一杯</string>
     <string name="home_browse_by_category">カテゴリから探す</string>
-    <string name="greeting_morning">おはようございます ☀️</string>
     <string name="greeting_morning_prompt">朝ごはんは何にしますか？</string>
-    <string name="greeting_afternoon">こんにちは 🌤️</string>
     <string name="greeting_afternoon_prompt">おいしいものを考えましょう</string>
-    <string name="greeting_evening">こんばんは 🌙</string>
     <string name="greeting_evening_prompt">今夜は何を作りましょう？</string>
-    <string name="greeting_night">夜ふかしの小腹？ 🌙</string>
     <string name="greeting_night_prompt">手早くできてほっとするもの</string>
     <string name="see_all">すべて表示</string>
     <string name="home_surprise_me">おまかせ</string>
@@ -130,14 +126,9 @@
         <item quantity="other">%1$d ステップ</item>
     </plurals>
     <string name="explore_search_hint">料理やドリンクを検索...</string>
-    <string name="suggest_chicken">チキン</string>
-    <string name="suggest_pasta">パスタ</string>
-    <string name="suggest_curry">カレー</string>
-    <string name="suggest_salad">サラダ</string>
-    <string name="suggest_soup">スープ</string>
-    <string name="suggest_cake">ケーキ</string>
-    <string name="suggest_pancakes">パンケーキ</string>
-    <string name="suggest_smoothie">スムージー</string>
+    <string name="explore_prompt_title">次の一品を見つけよう</string>
+    <string name="explore_prompt_body">世界中の料理やドリンクを
+検索できます。</string>
     <string name="explore_no_results_title">レシピが見つかりません</string>
     <string name="explore_no_results_message">「curry」のような料理や「smoothie」のようなドリンクで検索してみてください。</string>
     <string name="explore_categories">カテゴリ</string>

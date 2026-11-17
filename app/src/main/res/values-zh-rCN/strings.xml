@@ -111,13 +111,9 @@
     <string name="home_todays_favourites">今日人气</string>
     <string name="home_something_to_sip">来点喝的</string>
     <string name="home_browse_by_category">按类别浏览</string>
-    <string name="greeting_morning">早上好 ☀️</string>
     <string name="greeting_morning_prompt">早餐吃什么？</string>
-    <string name="greeting_afternoon">下午好 🌤️</string>
     <string name="greeting_afternoon_prompt">来计划点好吃的吧</string>
-    <string name="greeting_evening">晚上好 🌙</string>
     <string name="greeting_evening_prompt">今晚做什么呢？</string>
-    <string name="greeting_night">深夜嘴馋了？ 🌙</string>
     <string name="greeting_night_prompt">来点快手又暖心的</string>
     <string name="see_all">查看全部</string>
     <string name="home_surprise_me">随便来一个</string>
@@ -130,14 +126,9 @@
         <item quantity="other">%1$d 个步骤</item>
     </plurals>
     <string name="explore_search_hint">搜索菜品和饮品...</string>
-    <string name="suggest_chicken">鸡肉</string>
-    <string name="suggest_pasta">意面</string>
-    <string name="suggest_curry">咖喱</string>
-    <string name="suggest_salad">沙拉</string>
-    <string name="suggest_soup">汤</string>
-    <string name="suggest_cake">蛋糕</string>
-    <string name="suggest_pancakes">松饼</string>
-    <string name="suggest_smoothie">思慕雪</string>
+    <string name="explore_prompt_title">寻找下一道美食</string>
+    <string name="explore_prompt_body">搜索来自世界各地厨房的
+菜肴和饮品。</string>
     <string name="explore_no_results_title">没有找到食谱</string>
     <string name="explore_no_results_message">试试搜索“curry”这样的菜品，或“smoothie”这样的饮品。</string>
     <string name="explore_categories">类别</string>

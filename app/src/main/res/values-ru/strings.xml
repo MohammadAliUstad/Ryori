@@ -114,13 +114,9 @@
     <string name="home_todays_favourites">Любимое сегодня</string>
     <string name="home_something_to_sip">Что-нибудь выпить</string>
     <string name="home_browse_by_category">По категориям</string>
-    <string name="greeting_morning">Доброе утро ☀️</string>
     <string name="greeting_morning_prompt">Что на завтрак?</string>
-    <string name="greeting_afternoon">Добрый день 🌤️</string>
     <string name="greeting_afternoon_prompt">Давай придумаем что-нибудь вкусное</string>
-    <string name="greeting_evening">Добрый вечер 🌙</string>
     <string name="greeting_evening_prompt">Что готовим сегодня вечером?</string>
-    <string name="greeting_night">Проголодался ночью? 🌙</string>
     <string name="greeting_night_prompt">Что-нибудь быстрое и уютное</string>
     <string name="see_all">Все</string>
     <string name="home_surprise_me">Удиви меня</string>
@@ -139,14 +135,9 @@
         <item quantity="other">%1$d шага</item>
     </plurals>
     <string name="explore_search_hint">Поиск блюд и напитков...</string>
-    <string name="suggest_chicken">Курица</string>
-    <string name="suggest_pasta">Паста</string>
-    <string name="suggest_curry">Карри</string>
-    <string name="suggest_salad">Салат</string>
-    <string name="suggest_soup">Суп</string>
-    <string name="suggest_cake">Торт</string>
-    <string name="suggest_pancakes">Блины</string>
-    <string name="suggest_smoothie">Смузи</string>
+    <string name="explore_prompt_title">Найдите своё следующее блюдо</string>
+    <string name="explore_prompt_body">Ищите блюда и напитки
+кухонь со всего мира.</string>
     <string name="explore_no_results_title">Рецепты не найдены</string>
     <string name="explore_no_results_message">Попробуй блюдо вроде «карри» или напиток вроде «смузи».</string>
     <string name="explore_categories">Категории</string>
