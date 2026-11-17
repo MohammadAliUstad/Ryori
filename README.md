@@ -7,7 +7,7 @@
 <table border="0" width="100%">
     <tr>
         <td width="30%" align="center" valign="middle">
-            <img src="graphics/App%20Icon.png" width="180" alt="Ryori App Icon"/>
+            <img src="graphics/Icon.png" width="180" alt="Ryori App Icon"/>
         </td>
         <td width="70%" valign="middle">
             <h1>Ryori</h1>
