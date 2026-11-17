@@ -1,1 +1,3 @@
 /build
+# Release build outputs (APK, baseline profiles, output metadata)
+/release
