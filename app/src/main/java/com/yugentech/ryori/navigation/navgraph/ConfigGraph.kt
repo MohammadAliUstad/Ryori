@@ -8,6 +8,7 @@ import com.yugentech.ryori.theme.viewmodel.ThemeViewModel
 import com.yugentech.ryori.ui.config.aboutScreen.AboutScreen
 import com.yugentech.ryori.ui.config.appearanceScreen.AppearanceScreen
 import com.yugentech.ryori.ui.config.attributionsScreen.AttributionsScreen
+import com.yugentech.ryori.ui.config.languageScreen.LanguageScreen
 import com.yugentech.ryori.ui.config.moreAppsScreen.MoreAppsScreen
 import com.yugentech.ryori.ui.config.whatsNewScreen.WhatsNewScreen
 import org.koin.androidx.compose.koinViewModel
@@ -21,6 +22,11 @@ fun NavGraphBuilder.configGraph(
             onNavigateBack = { navController.popBackStack() },
             themeViewModel = themeViewModel
         )
+    }
+
+    // Settings > Language: the app's own language, apart from the phone's
+    composable(AppScreen.Language.route) {
+        LanguageScreen(onNavigateBack = { navController.popBackStack() })
     }
 
     composable(AppScreen.About.route) {

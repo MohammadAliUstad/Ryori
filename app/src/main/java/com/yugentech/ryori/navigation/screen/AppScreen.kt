@@ -8,12 +8,17 @@ sealed class AppScreen(val route: String) {
 
     data object Main        : AppScreen("main")
 
+    data object Onboarding  : AppScreen("onboarding")
+    // The same intro, opened again from Settings: finishing it just goes back.
+    data object OnboardingReplay : AppScreen("onboarding_replay")
+
     data object Home        : AppScreen("home")
     data object Search      : AppScreen("search")
     data object More        : AppScreen("more")
 
     data object About       : AppScreen("about")
     data object Appearance  : AppScreen("appearance")
+    data object Language    : AppScreen("language")
     data object Configure   : AppScreen("configure")
     data object WhatsNew    : AppScreen("whats_new")
     data object Attributions : AppScreen("attributions")

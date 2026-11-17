@@ -1,5 +1,7 @@
 package com.yugentech.ryori.navigation.navgraph
 
+import com.yugentech.ryori.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.navigation.NavGraphBuilder
@@ -9,12 +11,14 @@ import com.yugentech.ryori.api.model.domain.RecipeFilter
 import com.yugentech.ryori.api.model.domain.RecipeType
 import com.yugentech.ryori.navigation.screen.AppScreen
 import com.yugentech.ryori.ui.config.recentlyViewedScreen.RecentlyViewedScreen
+import com.yugentech.ryori.ui.onboardingScreen.OnboardingScreen
 import com.yugentech.ryori.ui.main.mainScreen.MainScreen
 import com.yugentech.ryori.ui.main.recipeListScreen.RecipeListScreen
 import com.yugentech.ryori.ui.main.recipeScreen.RecipeScreen
 
 fun NavGraphBuilder.dashGraph(
-    navController: NavHostController
+    navController: NavHostController,
+    onOnboardingComplete: () -> Unit = {}
 ) {
     val openRecipe: (RecipeType, String) -> Unit = { type, id ->
         navController.navigate(AppScreen.Recipe.createRoute(type, id))
@@ -25,6 +29,27 @@ fun NavGraphBuilder.dashGraph(
 
     val open: (AppScreen) -> Unit = { screen ->
         navController.navigate(screen.route) { launchSingleTop = true }
+    }
+
+    // The first-run intro: finishing or skipping it saves that it's done and lands on Main.
+    composable(AppScreen.Onboarding.route) {
+        OnboardingScreen(
+            onFinish = {
+                onOnboardingComplete()
+                navController.navigate(AppScreen.Main.route) {
+                    popUpTo(AppScreen.Onboarding.route) { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
+        )
+    }
+
+    // The intro again, from Settings: finishing, skipping or backing out returns there.
+    composable(AppScreen.OnboardingReplay.route) {
+        OnboardingScreen(
+            onFinish = { navController.popBackStack() },
+            finishLabel = stringResource(R.string.onboarding_done)
+        )
     }
 
     composable(AppScreen.Main.route) { backStackEntry ->
@@ -38,9 +63,11 @@ fun NavGraphBuilder.dashGraph(
             onBrowse = openList,
             onAbout = { open(AppScreen.About) },
             onAppearance = { open(AppScreen.Appearance) },
+            onLanguage = { open(AppScreen.Language) },
             onRecentlyViewed = { open(AppScreen.RecentlyViewed) },
             onWhatsNew = { open(AppScreen.WhatsNew) },
             onMoreApps = { open(AppScreen.MoreApps) },
+            onReplayOnboarding = { open(AppScreen.OnboardingReplay) },
             requestedTab = requestedTab,
             onTabRequestHandled = { backStackEntry.savedStateHandle.set<String?>(AppScreen.REQUESTED_TAB, null) }
         )
