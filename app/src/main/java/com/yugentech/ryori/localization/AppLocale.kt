@@ -101,7 +101,7 @@ object AppLocale {
     /**
      * Below Android 13: points the activity's and the app's resources at [locale] and tells the
      * views, the same way the system does for a handled configuration change. Compose sees a new
-     * LocalConfiguration and recomposes every string; a switch to or from Arabic flips the layout.
+     * LocalConfiguration and recomposes every string, and a right-to-left language would flip the layout.
      */
     @Suppress("DEPRECATION")
     private fun applyInPlace(activity: Activity, locale: Locale) {
