@@ -1,5 +1,7 @@
 package com.yugentech.ryori.navigation.screen
 
+import com.yugentech.ryori.R
+import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Home
@@ -13,13 +15,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 
 sealed class BottomBarScreen(
     val route: String,
-    val title: String,
+    @param:StringRes val title: Int,
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector
 ) {
     data object Home : BottomBarScreen(
         route = AppScreen.Home.route,
-        title = "Home",
+        title = R.string.tab_home,
         selectedIcon = Icons.Filled.Home,
         unselectedIcon = Icons.Outlined.Home
     )
@@ -27,7 +29,7 @@ sealed class BottomBarScreen(
     // The Explore tab (still "Search" in code and routes; shown as "Explore").
     data object Search : BottomBarScreen(
         route = AppScreen.Search.route,
-        title = "Explore",
+        title = R.string.tab_explore,
         selectedIcon = Icons.Filled.Search,
         unselectedIcon = Icons.Outlined.Search
     )
@@ -35,7 +37,7 @@ sealed class BottomBarScreen(
     // The settings tab (still "More" in code and routes; shown as "Settings").
     data object More : BottomBarScreen(
         route = AppScreen.More.route,
-        title = "Settings",
+        title = R.string.tab_settings,
         selectedIcon = Icons.Filled.Settings,
         unselectedIcon = Icons.Outlined.Settings
     )

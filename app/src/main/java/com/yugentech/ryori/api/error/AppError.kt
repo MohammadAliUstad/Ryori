@@ -1,5 +1,7 @@
 package com.yugentech.ryori.api.error
 
+import com.yugentech.ryori.R
+import androidx.annotation.StringRes
 import io.ktor.client.network.sockets.ConnectTimeoutException
 import io.ktor.client.plugins.HttpRequestTimeoutException
 import kotlinx.serialization.SerializationException
@@ -15,31 +17,35 @@ import java.nio.channels.UnresolvedAddressException
 // to one of these with Throwable.toAppError().
 //   title / message -> full-screen error states
 //   short           -> one-line toasts for actions that failed on an otherwise working screen
-enum class AppError(val title: String, val message: String, val short: String) {
+enum class AppError(
+    @param:StringRes val title: Int,
+    @param:StringRes val message: Int,
+    @param:StringRes val short: Int
+) {
     OFFLINE(
-        title = "You're offline",
-        message = "Check your Wi-Fi or mobile data, then try again.",
-        short = "No internet connection"
+        title = R.string.error_offline_title,
+        message = R.string.error_offline_message,
+        short = R.string.error_offline_short
     ),
     TIMEOUT(
-        title = "This is taking too long",
-        message = "The recipe server is slow to respond. Please try again in a moment.",
-        short = "The connection timed out. Try again."
+        title = R.string.error_timeout_title,
+        message = R.string.error_timeout_message,
+        short = R.string.error_timeout_short
     ),
     SERVER(
-        title = "The kitchen's closed for a moment",
-        message = "The recipe server is having trouble right now. Please try again a little later.",
-        short = "The recipe server is having trouble"
+        title = R.string.error_server_title,
+        message = R.string.error_server_message,
+        short = R.string.error_server_short
     ),
     NOT_FOUND(
-        title = "Recipe not found",
-        message = "This recipe isn't available anymore. Try another one.",
-        short = "Couldn't find a recipe. Try again."
+        title = R.string.error_not_found_title,
+        message = R.string.error_not_found_message,
+        short = R.string.error_not_found_short
     ),
     UNKNOWN(
-        title = "Something went wrong",
-        message = "An unexpected problem occurred. Please try again.",
-        short = "Something went wrong. Try again."
+        title = R.string.error_unknown_title,
+        message = R.string.error_unknown_message,
+        short = R.string.error_unknown_short
     )
 }
 

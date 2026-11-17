@@ -1,5 +1,6 @@
 package com.yugentech.ryori.api.viewmodel
 
+import com.yugentech.ryori.R
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.yugentech.ryori.api.cache.CachedApi
@@ -58,8 +59,9 @@ class MoreViewModel(
     fun clearRecent() = persist { kitchen.clearRecent() }
 
     // Shown as a toast when saving a change fails (e.g. storage full).
-    private val _notice = MutableStateFlow<String?>(null)
-    val notice: StateFlow<String?> = _notice.asStateFlow()
+    private val _notice = MutableStateFlow<Int?>(null)
+    // A string resource, shown in the app's current language
+    val notice: StateFlow<Int?> = _notice.asStateFlow()
 
     fun dismissNotice() {
         _notice.value = null
@@ -72,7 +74,7 @@ class MoreViewModel(
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
                 Timber.w(e, "Couldn't save a change")
-                _notice.value = "Couldn't save that change. Please try again."
+                _notice.value = R.string.settings_save_failed
             }
         }
     }
