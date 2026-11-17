@@ -1,5 +1,7 @@
 package com.yugentech.ryori.ui.main.mainScreen.components
 
+import com.yugentech.ryori.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -24,7 +26,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -91,7 +92,7 @@ fun RecipeCard(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.LocalCafe,
-                        contentDescription = "Drink",
+                        contentDescription = stringResource(R.string.recipe_drink),
                         modifier = Modifier.padding(6.dp)
                     )
                 }
@@ -149,7 +150,6 @@ fun RecipeCardRow(
 @Composable
 fun RecipeCardRowPlaceholder(
     contentPadding: PaddingValues,
-    shimmer: Color,
     modifier: Modifier = Modifier,
     count: Int = 4
 ) {
@@ -166,7 +166,7 @@ fun RecipeCardRowPlaceholder(
                         .fillMaxWidth()
                         .aspectRatio(1f)
                         .clip(RoundedCornerShape(MaterialTheme.corners.large))
-                        .background(shimmer)
+                        .loadingPulse()
                 )
                 // An empty Text with the card title's style takes exactly the height the name will.
                 Text(
@@ -181,7 +181,7 @@ fun RecipeCardRowPlaceholder(
                         )
                         .fillMaxWidth(0.8f)
                         .clip(RoundedCornerShape(MaterialTheme.corners.small))
-                        .background(shimmer)
+                        .loadingPulse()
                 )
             }
         }

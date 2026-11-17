@@ -1,5 +1,10 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.yugentech.ryori.ui.main.exploreScreen
 
+import com.yugentech.ryori.R
+import androidx.compose.ui.res.stringResource
+import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
@@ -45,7 +50,8 @@ import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material.icons.rounded.SortByAlpha
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -133,7 +139,7 @@ import com.yugentech.ryori.ui.main.mainScreen.components.RecipeCardRow
 import com.yugentech.ryori.ui.main.mainScreen.components.RecipeCardRowPlaceholder
 import com.yugentech.ryori.ui.main.mainScreen.components.SectionHeader
 import com.yugentech.ryori.ui.main.mainScreen.components.ToastMessage
-import com.yugentech.ryori.ui.main.mainScreen.components.rememberShimmerColor
+import com.yugentech.ryori.ui.main.mainScreen.components.loadingPulse
 import com.yugentech.ryori.ui.main.mainScreen.components.rowItemShape
 import org.koin.androidx.compose.koinViewModel
 import androidx.compose.foundation.lazy.grid.items as gridItems
@@ -252,7 +258,7 @@ fun ExploreScreen(
                         onSearch = { focusManager.clearFocus() },
                         expanded = searchExpanded,
                         onExpandedChange = { searchExpanded = it },
-                        placeholder = { Text("Search dishes and drinks...") },
+                        placeholder = { Text(stringResource(R.string.explore_search_hint)) },
                         leadingIcon = {
                             IconButton(onClick = {
                                 if (searchExpanded) closeSearch() else { searchExpanded = true }
@@ -263,7 +269,7 @@ fun ExploreScreen(
                         trailingIcon = {
                             if (uiState.query.isNotEmpty()) {
                                 IconButton(onClick = viewModel::clearSearch) {
-                                    Icon(Icons.Rounded.Close, contentDescription = "Clear")
+                                    Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.clear))
                                 }
                             }
                         },
@@ -325,7 +331,7 @@ fun ExploreScreen(
         // Problems that don't take over the screen: a failed surprise, or sections that
         // couldn't load. Sits just under the search bar.
         ToastMessage(
-            message = uiState.notice?.short,
+            message = uiState.notice?.short?.let { stringResource(it) },
             onDismiss = viewModel::dismissNotice,
             modifier = Modifier
                 .align(Alignment.TopCenter)
@@ -337,16 +343,19 @@ fun ExploreScreen(
 
 private enum class ExploreMode { Error, Browse }
 
-// Shown in the expanded search before anything is typed, like Discover's suggestions.
+// Shown in the expanded search before anything is typed, like Discover's suggestions. The
+// query stays English (the recipe databases are); only its label follows the app's language.
+private class SearchSuggestion(val query: String, @param:StringRes val label: Int, val icon: ImageVector)
+
 private val searchSuggestions = listOf(
-    "Chicken" to Icons.Rounded.SetMeal,
-    "Pasta" to Icons.Rounded.RamenDining,
-    "Curry" to Icons.Rounded.LocalFireDepartment,
-    "Salad" to Icons.Rounded.Eco,
-    "Soup" to Icons.Rounded.SoupKitchen,
-    "Cake" to Icons.Rounded.Cake,
-    "Pancakes" to Icons.Rounded.BreakfastDining,
-    "Smoothie" to Icons.Rounded.LocalCafe
+    SearchSuggestion("Chicken", R.string.suggest_chicken, Icons.Rounded.SetMeal),
+    SearchSuggestion("Pasta", R.string.suggest_pasta, Icons.Rounded.RamenDining),
+    SearchSuggestion("Curry", R.string.suggest_curry, Icons.Rounded.LocalFireDepartment),
+    SearchSuggestion("Salad", R.string.suggest_salad, Icons.Rounded.Eco),
+    SearchSuggestion("Soup", R.string.suggest_soup, Icons.Rounded.SoupKitchen),
+    SearchSuggestion("Cake", R.string.suggest_cake, Icons.Rounded.Cake),
+    SearchSuggestion("Pancakes", R.string.suggest_pancakes, Icons.Rounded.BreakfastDining),
+    SearchSuggestion("Smoothie", R.string.suggest_smoothie, Icons.Rounded.LocalCafe)
 )
 
 @Composable
@@ -356,7 +365,7 @@ private fun SearchSuggestions(onSuggestionClick: (String) -> Unit) {
         contentPadding = PaddingValues(MaterialTheme.spacing.m),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.s)
     ) {
-        items(searchSuggestions, key = { it.first }) { (name, icon) ->
+        items(searchSuggestions, key = { it.query }) { suggestion ->
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -364,18 +373,18 @@ private fun SearchSuggestions(onSuggestionClick: (String) -> Unit) {
                     .clip(RoundedCornerShape(MaterialTheme.corners.medium))
                     .clickable {
                         haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
-                        onSuggestionClick(name)
+                        onSuggestionClick(suggestion.query)
                     }
                     .padding(vertical = 12.dp, horizontal = MaterialTheme.spacing.s)
             ) {
                 Icon(
-                    imageVector = icon,
+                    imageVector = suggestion.icon,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.width(MaterialTheme.spacing.m))
                 Text(
-                    text = name,
+                    text = stringResource(suggestion.label),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -401,8 +410,8 @@ private fun SearchResults(
 
         uiState.searchResults.isEmpty() -> EmptyState(
             icon = Icons.Rounded.SearchOff,
-            title = "No recipes found",
-            message = "Try a dish like \"curry\" or a drink like \"smoothie\"."
+            title = stringResource(R.string.explore_no_results_title),
+            message = stringResource(R.string.explore_no_results_message)
         )
 
         else -> LazyVerticalGrid(
@@ -439,9 +448,10 @@ private fun BrowseSections(
 ) {
     val horizontalPadding = PaddingValues(horizontal = MaterialTheme.spacing.m)
     // One pulse for every skeleton, so they all breathe together.
-    val shimmer = rememberShimmerColor()
-    // Outside the LazyColumn, so it outlives the cuisines item scrolling off screen.
-    val cuisinesShown = remember { ShownCount() }
+    // Outside the LazyColumn, so it outlives the cuisines item scrolling off screen. It starts at
+    // the cuisines already loaded: coming back to the tab, those are shown as they are, and only
+    // a batch that arrives while you're here pops in.
+    val cuisinesShown = remember { ShownCount(uiState.areas.size) }
 
     // What needs no network (the surprise cards, the drink categories, A-Z) shows straight away.
     // Each loaded section shows a skeleton the size of its content until its data is in, then
@@ -452,19 +462,20 @@ private fun BrowseSections(
         modifier = modifier.fillMaxSize()
     ) {
         item {
+            // The cards keep their icons while a surprise is fetched (it only takes a moment): the
+            // screen just navigates once it's found, and ExploreViewModel ignores repeat taps
             SurpriseRow(
-                inProgress = uiState.surpriseInProgress,
                 onSurprise = onSurprise,
                 modifier = Modifier.padding(horizontalPadding)
             )
         }
 
         if (uiState.categoriesLoading || uiState.categories.isNotEmpty()) {
-            item { SectionHeader(icon = Icons.Rounded.Category, title = "Categories") }
+            item { SectionHeader(icon = Icons.Rounded.Category, title = stringResource(R.string.explore_categories)) }
             item {
                 SectionCrossfade(loading = uiState.categoriesLoading, label = "categories") { showPlaceholder ->
                     if (showPlaceholder) {
-                        CategoryRowPlaceholder(contentPadding = horizontalPadding, shimmer = shimmer)
+                        CategoryRowPlaceholder(contentPadding = horizontalPadding)
                     } else {
                         LazyRow(
                             contentPadding = horizontalPadding,
@@ -483,7 +494,7 @@ private fun BrowseSections(
         }
 
         if (uiState.areasLoading || uiState.areas.isNotEmpty()) {
-            item { SectionHeader(icon = Icons.Rounded.Public, title = "Cuisines") }
+            item { SectionHeader(icon = Icons.Rounded.Public, title = stringResource(R.string.explore_cuisines)) }
             item {
                 // Cuisines come in batches on a cold cache: the skeleton only stands in until the
                 // first batch is found, then each new batch fades in at the end, with a few
@@ -501,7 +512,7 @@ private fun BrowseSections(
                             .animateContentSize()
                     ) {
                         if (showPlaceholder) {
-                            cuisinePlaceholderWidths.forEach { width -> PillPlaceholder(width = width, shimmer = shimmer) }
+                            cuisinePlaceholderWidths.forEach { width -> PillPlaceholder(width = width) }
                         } else {
                             // Chips past the ones already shown are the new batch; they pop in one
                             // after another. Chips shown before (e.g. scrolled back into view) don't.
@@ -520,7 +531,7 @@ private fun BrowseSections(
                             }
                             if (uiState.areasLoading) {
                                 cuisinePlaceholderWidths.take(CUISINE_TRAILING_PLACEHOLDER_COUNT).forEach { width ->
-                                    PillPlaceholder(width = width, shimmer = shimmer)
+                                    PillPlaceholder(width = width)
                                 }
                             }
                         }
@@ -530,11 +541,11 @@ private fun BrowseSections(
         }
 
         if (uiState.ingredientsLoading || uiState.ingredients.isNotEmpty()) {
-            item { SectionHeader(icon = Icons.Rounded.Kitchen, title = "Cook With") }
+            item { SectionHeader(icon = Icons.Rounded.Kitchen, title = stringResource(R.string.explore_cook_with)) }
             item {
                 SectionCrossfade(loading = uiState.ingredientsLoading, label = "ingredients") { showPlaceholder ->
                     if (showPlaceholder) {
-                        IngredientRowPlaceholder(contentPadding = horizontalPadding, shimmer = shimmer)
+                        IngredientRowPlaceholder(contentPadding = horizontalPadding)
                     } else {
                         LazyRow(
                             contentPadding = horizontalPadding,
@@ -553,7 +564,7 @@ private fun BrowseSections(
         }
 
         // The drink categories are fixed, so they show straight away; only the drinks row loads.
-        item { SectionHeader(icon = Icons.Rounded.LocalCafe, title = "Drinks & Mocktails") }
+        item { SectionHeader(icon = Icons.Rounded.LocalCafe, title = stringResource(R.string.list_title_drinks)) }
         item {
             LazyRow(
                 contentPadding = horizontalPadding,
@@ -561,7 +572,7 @@ private fun BrowseSections(
             ) {
                 items(DrinkCategories.all, key = { it.first }) { (category, label) ->
                     FilterPill(
-                        label = label,
+                        label = stringResource(label),
                         onClick = { onBrowse(RecipeFilter.DRINK_CATEGORY, category) }
                     )
                 }
@@ -573,7 +584,6 @@ private fun BrowseSections(
                     if (showPlaceholder) {
                         RecipeCardRowPlaceholder(
                             contentPadding = horizontalPadding,
-                            shimmer = shimmer,
                             modifier = Modifier.padding(top = MaterialTheme.spacing.s)
                         )
                     } else {
@@ -589,7 +599,7 @@ private fun BrowseSections(
             }
         }
 
-        item { SectionHeader(icon = Icons.Rounded.SortByAlpha, title = "Browse A-Z") }
+        item { SectionHeader(icon = Icons.Rounded.SortByAlpha, title = stringResource(R.string.explore_browse_az)) }
         item {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.s),
@@ -610,7 +620,6 @@ private fun BrowseSections(
 // Two grouped cards (primary / tertiary): Quill's glance-card treatment laid out as a row.
 @Composable
 private fun SurpriseRow(
-    inProgress: RecipeType?,
     onSurprise: (RecipeType) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -619,10 +628,9 @@ private fun SurpriseRow(
         modifier = modifier.fillMaxWidth()
     ) {
         SurpriseCard(
-            title = "Surprise dish",
-            subtitle = "Random recipe",
+            title = stringResource(R.string.explore_surprise_dish),
+            subtitle = stringResource(R.string.explore_surprise_dish_subtitle),
             icon = Icons.Rounded.Restaurant,
-            loading = inProgress == RecipeType.MEAL,
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
             shape = rowItemShape(index = 0, count = 2),
@@ -630,10 +638,9 @@ private fun SurpriseRow(
             modifier = Modifier.weight(1f)
         )
         SurpriseCard(
-            title = "Surprise drink",
-            subtitle = "Non-alcoholic",
+            title = stringResource(R.string.explore_surprise_drink),
+            subtitle = stringResource(R.string.explore_surprise_drink_subtitle),
             icon = Icons.Rounded.LocalCafe,
-            loading = inProgress == RecipeType.DRINK,
             containerColor = MaterialTheme.colorScheme.tertiaryContainer,
             contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
             shape = rowItemShape(index = 1, count = 2),
@@ -648,7 +655,6 @@ private fun SurpriseCard(
     title: String,
     subtitle: String,
     icon: ImageVector,
-    loading: Boolean,
     containerColor: Color,
     contentColor: Color,
     shape: Shape,
@@ -668,15 +674,7 @@ private fun SurpriseCard(
     ) {
         Column(modifier = Modifier.padding(MaterialTheme.spacing.m)) {
             Box(modifier = Modifier.size(28.dp), contentAlignment = Alignment.Center) {
-                if (loading) {
-                    CircularProgressIndicator(
-                        color = contentColor,
-                        strokeWidth = 2.dp,
-                        modifier = Modifier.size(22.dp)
-                    )
-                } else {
-                    Icon(imageVector = Icons.Rounded.Shuffle, contentDescription = null)
-                }
+                Icon(imageVector = Icons.Rounded.Shuffle, contentDescription = null)
             }
             Spacer(Modifier.height(MaterialTheme.spacing.m))
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -808,7 +806,7 @@ private fun SeeAllTile(onClick: () -> Unit) {
     ) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(
-                text = "See all drinks",
+                text = stringResource(R.string.explore_see_all_drinks),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary
@@ -890,7 +888,7 @@ private fun PopIn(animate: Boolean, delayMillis: Int, content: @Composable () ->
 // Same as the categories LazyRow: CategoryTile's 128dp card, its padding, the 1.3 image and one
 // line of label, with the row's spacing. Not scrollable while loading.
 @Composable
-private fun CategoryRowPlaceholder(contentPadding: PaddingValues, shimmer: Color) {
+private fun CategoryRowPlaceholder(contentPadding: PaddingValues) {
     LazyRow(
         contentPadding = contentPadding,
         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.s),
@@ -913,7 +911,7 @@ private fun CategoryRowPlaceholder(contentPadding: PaddingValues, shimmer: Color
                             .fillMaxWidth()
                             .aspectRatio(1.3f)
                             .clip(RoundedCornerShape(MaterialTheme.corners.medium))
-                            .background(shimmer)
+                            .loadingPulse()
                     )
                     // An empty Text in the label's style takes exactly one label line of height.
                     Text(
@@ -924,7 +922,7 @@ private fun CategoryRowPlaceholder(contentPadding: PaddingValues, shimmer: Color
                             .padding(top = MaterialTheme.spacing.xs)
                             .fillMaxWidth(0.6f)
                             .clip(RoundedCornerShape(MaterialTheme.corners.small))
-                            .background(shimmer)
+                            .loadingPulse()
                     )
                 }
             }
@@ -936,7 +934,7 @@ private fun CategoryRowPlaceholder(contentPadding: PaddingValues, shimmer: Color
 // a given width. The line holds an invisible flag: the emoji makes a chip's line taller than
 // plain (or empty) text, which left the skeletons sitting higher than the chips beside them.
 @Composable
-private fun PillPlaceholder(width: Dp, shimmer: Color) {
+private fun PillPlaceholder(width: Dp) {
     Text(
         text = CuisineFlags.flag(PLACEHOLDER_FLAG_AREA),
         color = Color.Transparent,
@@ -944,7 +942,7 @@ private fun PillPlaceholder(width: Dp, shimmer: Color) {
         style = MaterialTheme.typography.labelLarge,
         modifier = Modifier
             .clip(RoundedCornerShape(MaterialTheme.corners.pill))
-            .background(shimmer)
+            .loadingPulse()
             .padding(horizontal = 14.dp, vertical = 8.dp)
             .width(width)
     )
@@ -953,7 +951,7 @@ private fun PillPlaceholder(width: Dp, shimmer: Color) {
 // Same as the ingredients LazyRow: IngredientBubble's 84dp column, 68dp circle and one line of
 // label, with the row's spacing.
 @Composable
-private fun IngredientRowPlaceholder(contentPadding: PaddingValues, shimmer: Color) {
+private fun IngredientRowPlaceholder(contentPadding: PaddingValues) {
     LazyRow(
         contentPadding = contentPadding,
         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.m),
@@ -970,7 +968,7 @@ private fun IngredientRowPlaceholder(contentPadding: PaddingValues, shimmer: Col
                     modifier = Modifier
                         .size(68.dp)
                         .clip(CircleShape)
-                        .background(shimmer)
+                        .loadingPulse()
                 )
                 Text(
                     text = "",
@@ -979,7 +977,7 @@ private fun IngredientRowPlaceholder(contentPadding: PaddingValues, shimmer: Col
                         .padding(top = MaterialTheme.spacing.xs)
                         .fillMaxWidth(0.7f)
                         .clip(RoundedCornerShape(MaterialTheme.corners.small))
-                        .background(shimmer)
+                        .loadingPulse()
                 )
             }
         }
@@ -1010,7 +1008,7 @@ private const val CUISINE_STAGGER_MAX_STEPS = 10
 @Composable
 private fun CenteredLoading() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator()
+        CircularWavyProgressIndicator()
     }
 }
 

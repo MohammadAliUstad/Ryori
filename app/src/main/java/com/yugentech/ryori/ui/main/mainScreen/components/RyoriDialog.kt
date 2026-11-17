@@ -1,5 +1,7 @@
 package com.yugentech.ryori.ui.main.mainScreen.components
 
+import com.yugentech.ryori.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -46,7 +48,7 @@ fun RyoriDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
     message: String? = null,
-    dismissLabel: String = "Cancel",
+    dismissLabel: String = stringResource(R.string.cancel),
     destructive: Boolean = false,
     confirmEnabled: Boolean = true,
     content: (@Composable () -> Unit)? = null

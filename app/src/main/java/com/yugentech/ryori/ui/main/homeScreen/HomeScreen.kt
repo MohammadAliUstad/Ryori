@@ -1,9 +1,17 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.yugentech.ryori.ui.main.homeScreen
 
+import com.yugentech.ryori.R
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -40,7 +48,11 @@ import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -49,7 +61,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -65,7 +76,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
@@ -98,7 +108,8 @@ import com.yugentech.ryori.ui.main.mainScreen.components.ParallaxBackground
 import com.yugentech.ryori.ui.main.mainScreen.components.RecipeCardRow
 import com.yugentech.ryori.ui.main.mainScreen.components.RecipeCardRowPlaceholder
 import com.yugentech.ryori.ui.main.mainScreen.components.ToastMessage
-import com.yugentech.ryori.ui.main.mainScreen.components.rememberShimmerColor
+import com.yugentech.ryori.ui.main.mainScreen.components.loadingPulse
+import com.yugentech.ryori.ui.main.mainScreen.components.ScrimTopAppBar
 import com.yugentech.ryori.ui.main.mainScreen.components.rowItemShape
 import java.time.LocalTime
 import org.koin.androidx.compose.koinViewModel
@@ -116,14 +127,6 @@ fun HomeScreen(
     val listState = rememberLazyListState()
     val fadeThrough = AppAnimations.Transitions.rememberExpressiveFadeThrough()
 
-    // Same as Quill's Library: the bar is transparent over a blurred parallax photo, and a
-    // surface gradient fades in behind it as the content scrolls up.
-    val scrollAlpha by remember {
-        derivedStateOf {
-            if (listState.firstVisibleItemIndex > 0) 1f
-            else (listState.firstVisibleItemScrollOffset / 100f).coerceIn(0f, 1f)
-        }
-    }
     val parallaxScrollOffset by remember {
         derivedStateOf {
             if (listState.firstVisibleItemIndex == 0) listState.firstVisibleItemScrollOffset else 10000
@@ -135,37 +138,18 @@ fun HomeScreen(
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            val surfaceColor = MaterialTheme.colorScheme.surface
-            Box(modifier = Modifier.fillMaxWidth()) {
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .graphicsLayer { alpha = scrollAlpha }
-                        .background(
-                            Brush.verticalGradient(
-                                0.0f to surfaceColor.copy(alpha = 0.9f),
-                                0.4f to surfaceColor.copy(alpha = 0.7f),
-                                0.7f to surfaceColor.copy(alpha = 0.30f),
-                                1.0f to surfaceColor.copy(alpha = 0.0f)
-                            )
-                        )
-                )
-                TopAppBar(
-                    title = {
-                        Text(
-                            text = "Ryori",
-                            style = MaterialTheme.typography.headlineLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.Transparent,
-                        scrolledContainerColor = Color.Transparent,
-                        titleContentColor = MaterialTheme.colorScheme.onSurface,
-                    ),
-                    scrollBehavior = scrollBehavior
-                )
-            }
+            // Transparent over the blurred parallax photo; a scrim fades in once content scrolls
+            // under it. The same bar as Settings here and Sessions' main pages
+            ScrimTopAppBar(
+                title = {
+                    Text(
+                        text = "Ryori",
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                scrollBehavior = scrollBehavior
+            )
         },
         containerColor = MaterialTheme.colorScheme.surface
     ) { innerPadding ->
@@ -224,7 +208,7 @@ fun HomeScreen(
             // Problems that don't take over the screen: a failed shuffle or surprise, or rows
             // that couldn't load.
             ToastMessage(
-                message = uiState.notice?.short,
+                message = uiState.notice?.short?.let { stringResource(it) },
                 onDismiss = viewModel::dismissNotice,
                 modifier = Modifier
                     .align(Alignment.TopCenter)
@@ -248,7 +232,6 @@ private fun HomeContent(
     val openSummary: (RecipeSummary) -> Unit = { onRecipeClick(it.type, it.id) }
     val rowPadding = PaddingValues(horizontal = MaterialTheme.spacing.m)
     val loading = uiState.isLoading
-    val shimmer = rememberShimmerColor()
     val haptic = LocalHapticFeedback.current
 
     // While loading, every section shows its real header straight away and a placeholder the
@@ -267,7 +250,7 @@ private fun HomeContent(
                 Greeting()
                 HomeSectionHeader(
                     icon = Icons.Rounded.Star,
-                    title = "Featured today",
+                    title = stringResource(R.string.home_featured_today),
                     action = {
                         IconButton(
                             onClick = {
@@ -277,16 +260,22 @@ private fun HomeContent(
                             enabled = !loading && !uiState.isRefreshingFeatured
                         ) {
                             if (uiState.isRefreshingFeatured) {
-                                CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
+                                // Thinner stroke than the default so the wave still reads at this small size
+                                val wavyStroke = Stroke(width = with(LocalDensity.current) { 2.dp.toPx() }, cap = StrokeCap.Round)
+                                CircularWavyProgressIndicator(
+                                    stroke = wavyStroke,
+                                    trackStroke = wavyStroke,
+                                    modifier = Modifier.size(20.dp)
+                                )
                             } else {
-                                Icon(Icons.Rounded.Refresh, contentDescription = "New picks")
+                                Icon(Icons.Rounded.Refresh, contentDescription = stringResource(R.string.home_new_picks))
                             }
                         }
                     }
                 )
                 LoadingCrossfade(loading = loading, label = "featured") { showPlaceholder ->
                     if (showPlaceholder) {
-                        FeaturedCarouselPlaceholder(shimmer = shimmer)
+                        FeaturedCarouselPlaceholder()
                     } else {
                         FeaturedCarousel(
                             recipes = uiState.featured,
@@ -300,8 +289,9 @@ private fun HomeContent(
 
         // Quick picks need no data, so they're usable while everything else loads.
         item(key = "quick_picks") {
+            // Surprise me keeps its icon while it fetches (it only takes a moment): the screen just
+            // navigates once the recipe is found, and HomeViewModel ignores repeat taps meanwhile
             QuickPicks(
-                surpriseLoading = uiState.isSurpriseLoading,
                 onSurprise = onSurprise,
                 onBrowse = onBrowse,
                 modifier = Modifier.padding(
@@ -319,7 +309,7 @@ private fun HomeContent(
             item(key = "cuisine_header") {
                 HomeSectionHeader(
                     icon = Icons.Rounded.Public,
-                    title = if (area != null) "Taste of ${CuisineFlags.flag(area)} $area" else "Taste of the world",
+                    title = if (area != null) stringResource(R.string.home_taste_of, "${CuisineFlags.flag(area)} $area") else stringResource(R.string.home_taste_of_world),
                     action = {
                         SeeAllButton(enabled = area != null) {
                             area?.let { onBrowse(RecipeFilter.AREA, it) }
@@ -330,7 +320,7 @@ private fun HomeContent(
             item(key = "cuisine_row") {
                 LoadingCrossfade(loading = loading, label = "cuisine_row") { showPlaceholder ->
                     if (showPlaceholder) {
-                        RecipeCardRowPlaceholder(contentPadding = rowPadding, shimmer = shimmer)
+                        RecipeCardRowPlaceholder(contentPadding = rowPadding)
                     } else {
                         RecipeCardRow(recipes = uiState.cuisineRecipes, onClick = openSummary, contentPadding = rowPadding)
                     }
@@ -343,7 +333,7 @@ private fun HomeContent(
             item(key = "category_header") {
                 HomeSectionHeader(
                     icon = Icons.Rounded.RestaurantMenu,
-                    title = if (category != null) "$category favourites" else "Today's favourites",
+                    title = if (category != null) stringResource(R.string.home_category_favourites, category) else stringResource(R.string.home_todays_favourites),
                     action = {
                         SeeAllButton(enabled = category != null) {
                             category?.let { onBrowse(RecipeFilter.CATEGORY, it) }
@@ -354,7 +344,7 @@ private fun HomeContent(
             item(key = "category_row") {
                 LoadingCrossfade(loading = loading, label = "category_row") { showPlaceholder ->
                     if (showPlaceholder) {
-                        RecipeCardRowPlaceholder(contentPadding = rowPadding, shimmer = shimmer)
+                        RecipeCardRowPlaceholder(contentPadding = rowPadding)
                     } else {
                         RecipeCardRow(recipes = uiState.categoryRecipes, onClick = openSummary, contentPadding = rowPadding)
                     }
@@ -366,14 +356,14 @@ private fun HomeContent(
             item(key = "drinks_header") {
                 HomeSectionHeader(
                     icon = Icons.Rounded.LocalCafe,
-                    title = "Something to sip",
+                    title = stringResource(R.string.home_something_to_sip),
                     action = { SeeAllButton(enabled = !loading) { onBrowse(RecipeFilter.DRINKS, "all") } }
                 )
             }
             item(key = "drinks_row") {
                 LoadingCrossfade(loading = loading, label = "drinks_row") { showPlaceholder ->
                     if (showPlaceholder) {
-                        RecipeCardRowPlaceholder(contentPadding = rowPadding, shimmer = shimmer)
+                        RecipeCardRowPlaceholder(contentPadding = rowPadding)
                     } else {
                         RecipeCardRow(recipes = uiState.drinks, onClick = openSummary, contentPadding = rowPadding)
                     }
@@ -383,7 +373,7 @@ private fun HomeContent(
 
         if (loading || uiState.categories.isNotEmpty()) {
             item(key = "categories_header") {
-                HomeSectionHeader(icon = Icons.Rounded.Category, title = "Browse by category")
+                HomeSectionHeader(icon = Icons.Rounded.Category, title = stringResource(R.string.home_browse_by_category))
             }
             // Same 3-wide rows either way; while loading, placeholder tiles fill them.
             val rows: List<List<Category?>> = if (loading) {
@@ -414,7 +404,7 @@ private fun HomeContent(
                                 modifier = Modifier.weight(1f)
                             ) { tile ->
                                 if (tile == null) {
-                                    CategoryTilePlaceholder(shimmer = shimmer)
+                                    CategoryTilePlaceholder()
                                 } else {
                                     CategoryTile(
                                         category = tile,
@@ -457,14 +447,16 @@ private fun LoadingCrossfade(
 
 @Composable
 private fun Greeting() {
-    val (greeting, prompt) = remember {
+    val (greetingRes, promptRes) = remember {
         when (LocalTime.now().hour) {
-            in 5..11 -> "Good morning ☀️" to "What's for breakfast?"
-            in 12..16 -> "Good afternoon 🌤️" to "Let's plan something tasty"
-            in 17..21 -> "Good evening 🌙" to "What are we cooking tonight?"
-            else -> "Late night cravings? 🌙" to "Something quick and comforting"
+            in 5..11 -> R.string.greeting_morning to R.string.greeting_morning_prompt
+            in 12..16 -> R.string.greeting_afternoon to R.string.greeting_afternoon_prompt
+            in 17..21 -> R.string.greeting_evening to R.string.greeting_evening_prompt
+            else -> R.string.greeting_night to R.string.greeting_night_prompt
         }
     }
+    val greeting = stringResource(greetingRes)
+    val prompt = stringResource(promptRes)
     Column(
         modifier = Modifier.padding(
             start = MaterialTheme.spacing.m,
@@ -537,7 +529,7 @@ private fun HomeSectionHeader(
 @Composable
 private fun SeeAllButton(enabled: Boolean = true, onClick: () -> Unit) {
     // Shown (disabled) while loading so the header keeps the same height.
-    TextButton(onClick = onClick, enabled = enabled) { Text("See all") }
+    TextButton(onClick = onClick, enabled = enabled) { Text(stringResource(R.string.see_all)) }
 }
 
 // --- Featured carousel ------------------------------------------------------------------------
@@ -600,26 +592,44 @@ private fun FeaturedPager(
             FeaturedCard(recipe = recipes[page], onClick = { onClick(recipes[page]) })
         }
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = MaterialTheme.spacing.s)
-        ) {
-            repeat(recipes.size) { index ->
-                val selected = pagerState.currentPage == index
-                val width by animateDpAsState(if (selected) 20.dp else 6.dp, label = "dot")
-                Box(
-                    modifier = Modifier
-                        .height(6.dp)
-                        .width(width)
-                        .clip(CircleShape)
-                        .background(
-                            if (selected) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.outlineVariant
-                        )
-                )
-            }
+        PageDots(count = recipes.size, selected = pagerState.currentPage)
+    }
+}
+
+// Quill's Discover page indicator, exactly: 8dp dots 6dp apart, start-aligned 16dp in and 16dp
+// under the cards. The current page's dot stretches to 24dp on a bouncy spring and fades to the
+// primary colour; the others are outlineVariant.
+@Composable
+private fun PageDots(count: Int, selected: Int) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp)
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.Start,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        repeat(count) { index ->
+            val isSelected = selected == index
+
+            val animatedWidth by animateDpAsState(
+                targetValue = if (isSelected) 24.dp else 8.dp,
+                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                label = "dot_width"
+            )
+            val animatedColor by animateColorAsState(
+                targetValue = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                label = "dot_color"
+            )
+
+            Box(
+                modifier = Modifier
+                    .padding(horizontal = 3.dp)
+                    .height(8.dp)
+                    .width(animatedWidth)
+                    .clip(CircleShape)
+                    .background(animatedColor)
+            )
         }
     }
 }
@@ -676,7 +686,8 @@ private fun FeaturedCard(recipe: Recipe, onClick: () -> Unit) {
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = "${recipe.ingredients.size} ingredients  •  ${recipe.steps.size} steps",
+                    text = pluralStringResource(R.plurals.home_ingredients_count, recipe.ingredients.size, recipe.ingredients.size) +
+                        "  •  " + pluralStringResource(R.plurals.home_steps_count, recipe.steps.size, recipe.steps.size),
                     style = MaterialTheme.typography.labelLarge,
                     color = Color.White.copy(alpha = 0.8f)
                 )
@@ -706,7 +717,6 @@ private fun OverlayPill(text: String) {
 // Three grouped shortcut cards, Quill's glance-card treatment.
 @Composable
 private fun QuickPicks(
-    surpriseLoading: Boolean,
     onSurprise: () -> Unit,
     onBrowse: (RecipeFilter, String) -> Unit,
     modifier: Modifier = Modifier
@@ -716,9 +726,8 @@ private fun QuickPicks(
         modifier = modifier.fillMaxWidth()
     ) {
         QuickPickCard(
-            title = "Surprise me",
+            title = stringResource(R.string.home_surprise_me),
             icon = Icons.Rounded.Shuffle,
-            loading = surpriseLoading,
             container = MaterialTheme.colorScheme.primaryContainer,
             content = MaterialTheme.colorScheme.onPrimaryContainer,
             shape = rowItemShape(0, 3),
@@ -726,7 +735,7 @@ private fun QuickPicks(
             modifier = Modifier.weight(1f)
         )
         QuickPickCard(
-            title = "Vegetarian",
+            title = stringResource(R.string.home_vegetarian),
             icon = Icons.Rounded.Eco,
             container = MaterialTheme.colorScheme.secondaryContainer,
             content = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -735,7 +744,7 @@ private fun QuickPicks(
             modifier = Modifier.weight(1f)
         )
         QuickPickCard(
-            title = "Desserts",
+            title = stringResource(R.string.home_desserts),
             icon = Icons.Rounded.Cake,
             container = MaterialTheme.colorScheme.tertiaryContainer,
             content = MaterialTheme.colorScheme.onTertiaryContainer,
@@ -754,8 +763,7 @@ private fun QuickPickCard(
     content: Color,
     shape: Shape,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    loading: Boolean = false
+    modifier: Modifier = Modifier
 ) {
     val haptic = LocalHapticFeedback.current
 
@@ -775,11 +783,7 @@ private fun QuickPickCard(
                 .padding(vertical = MaterialTheme.spacing.m, horizontal = MaterialTheme.spacing.s)
         ) {
             Box(modifier = Modifier.size(28.dp), contentAlignment = Alignment.Center) {
-                if (loading) {
-                    CircularProgressIndicator(color = content, strokeWidth = 2.dp, modifier = Modifier.size(22.dp))
-                } else {
-                    Icon(imageVector = icon, contentDescription = null)
-                }
+                Icon(imageVector = icon, contentDescription = null)
             }
             Spacer(Modifier.height(MaterialTheme.spacing.s))
             Text(
@@ -836,9 +840,10 @@ private fun CategoryTile(category: Category, onClick: () -> Unit, modifier: Modi
 // --- Loading & error --------------------------------------------------------------------------
 
 // Same size as FeaturedCarousel: a card the width of one pager page (screen minus the pager's
-// side padding) at the card's 0.9 aspect ratio, then the page dots underneath.
+// side padding) at the card's 0.9 aspect ratio, then the page dots underneath. Only the card
+// pulses; the dots are drawn as the real indicator.
 @Composable
-private fun FeaturedCarouselPlaceholder(shimmer: Color) {
+private fun FeaturedCarouselPlaceholder() {
     Column {
         Box(
             modifier = Modifier
@@ -846,24 +851,11 @@ private fun FeaturedCarouselPlaceholder(shimmer: Color) {
                 .fillMaxWidth()
                 .aspectRatio(0.9f)
                 .clip(RoundedCornerShape(MaterialTheme.corners.extraLarge))
-                .background(shimmer)
+                .loadingPulse()
         )
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = MaterialTheme.spacing.s)
-        ) {
-            repeat(FEATURED_PLACEHOLDER_DOTS) { index ->
-                Box(
-                    modifier = Modifier
-                        .height(6.dp)
-                        .width(if (index == 0) 20.dp else 6.dp)
-                        .clip(CircleShape)
-                        .background(shimmer)
-                )
-            }
-        }
+        // The real page indicator, not a skeleton: FeaturedPager's own dots on its first page, so
+        // it already looks loaded and doesn't change when the cards arrive
+        PageDots(count = FEATURED_PLACEHOLDER_DOTS, selected = 0)
     }
 }
 
@@ -872,7 +864,7 @@ private const val FEATURED_PLACEHOLDER_DOTS = 5
 
 // Same layout as CategoryTile: the card, its padding, the 1.3 image and one line of label.
 @Composable
-private fun CategoryTilePlaceholder(shimmer: Color, modifier: Modifier = Modifier) {
+private fun CategoryTilePlaceholder(modifier: Modifier = Modifier) {
     Card(
         shape = RoundedCornerShape(MaterialTheme.corners.large),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
@@ -889,7 +881,7 @@ private fun CategoryTilePlaceholder(shimmer: Color, modifier: Modifier = Modifie
                     .fillMaxWidth()
                     .aspectRatio(1.3f)
                     .clip(RoundedCornerShape(MaterialTheme.corners.medium))
-                    .background(shimmer)
+                    .loadingPulse()
             )
             // An empty Text in the label's style takes exactly one label line of height.
             Text(
@@ -900,7 +892,7 @@ private fun CategoryTilePlaceholder(shimmer: Color, modifier: Modifier = Modifie
                     .padding(top = MaterialTheme.spacing.xs)
                     .fillMaxWidth(0.6f)
                     .clip(RoundedCornerShape(MaterialTheme.corners.small))
-                    .background(shimmer)
+                    .loadingPulse()
             )
         }
     }

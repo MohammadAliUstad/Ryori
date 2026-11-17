@@ -3,12 +3,14 @@ package com.yugentech.ryori.ui.main.mainScreen
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -19,8 +21,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import com.yugentech.ryori.navigation.transition.rememberNavTransitions
+import com.yugentech.ryori.ui.main.mainScreen.components.smoothBottomScrimBrush
 import com.yugentech.ryori.api.model.domain.RecipeFilter
 import com.yugentech.ryori.api.model.domain.RecipeType
 import com.yugentech.ryori.navigation.screen.BottomBarScreen
@@ -42,9 +48,11 @@ fun MainScreen(
     onBrowse: (RecipeFilter, String) -> Unit,
     onAbout: () -> Unit,
     onAppearance: () -> Unit,
+    onLanguage: () -> Unit = {},
     onRecentlyViewed: () -> Unit,
     onWhatsNew: () -> Unit,
     onMoreApps: () -> Unit,
+    onReplayOnboarding: () -> Unit = {},
     requestedTab: String? = null,
     onTabRequestHandled: () -> Unit = {}
 ) {
@@ -90,18 +98,23 @@ fun MainScreen(
                 onTabSelected = { screen -> currentTabIndex = tabs.indexOf(screen) }
             )
         }
-    ) { innerPadding ->
+    ) { scaffoldPadding ->
+        // As in Sessions, the pages run down under the floating dock (each tab's list pads its
+        // end by this much), so the dock floats over the page instead of sitting on its own band.
+        val bottomInset = scaffoldPadding.calculateBottomPadding()
+        val innerPadding = PaddingValues(
+            top = scaffoldPadding.calculateTopPadding(),
+            bottom = bottomInset + DockContentGap
+        )
+        val transitions = rememberNavTransitions()
         Box(modifier = Modifier.fillMaxSize()) {
             AnimatedContent(
                 targetState = currentTab,
                 transitionSpec = {
+                    // As in Sessions: the same shared axis X as opening a screen, moving the way
+                    // the tab bar reads
                     val navigatingRight = tabs.indexOf(targetState) > tabs.indexOf(initialState)
-
-                    if (navigatingRight) {
-                        slideInHorizontally { it } togetherWith slideOutHorizontally { -it }
-                    } else {
-                        slideInHorizontally { -it } togetherWith slideOutHorizontally { it }
-                    }
+                    transitions.tabSwitch(forward = navigatingRight)
                 },
                 label = "TabSwitch",
                 modifier = Modifier.fillMaxSize()
@@ -123,14 +136,32 @@ fun MainScreen(
                         BottomBarScreen.More -> MoreScreen(
                             onAbout = onAbout,
                             onAppearance = onAppearance,
+                            onLanguage = onLanguage,
                             onRecentlyViewed = onRecentlyViewed,
                             onWhatsNew = onWhatsNew,
                             onMoreApps = onMoreApps,
+                            onReplayOnboarding = onReplayOnboarding,
                             contentPadding = innerPadding
                         )
                     }
                 }
             }
+
+            // A soft fade into the background along the bottom, under the dock, so the page
+            // dissolves away behind it instead of being cut off at a hard edge
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(bottomInset + BottomFadeExtra)
+                    .background(smoothBottomScrimBrush(MaterialTheme.colorScheme.background, bottomAlpha = 0.95f))
+            )
         }
     }
 }
+
+/** Space left between the end of a page's content and the top of the nav dock. */
+private val DockContentGap = 8.dp
+
+/** How far the bottom fade reaches above the dock. */
+private val BottomFadeExtra = 24.dp

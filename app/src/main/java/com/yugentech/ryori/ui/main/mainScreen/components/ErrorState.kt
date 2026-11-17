@@ -1,5 +1,7 @@
 package com.yugentech.ryori.ui.main.mainScreen.components
 
+import com.yugentech.ryori.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -62,14 +64,14 @@ fun ErrorState(
         )
         Spacer(Modifier.height(MaterialTheme.spacing.m))
         Text(
-            text = error.title,
+            text = stringResource(error.title),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
         )
         Spacer(Modifier.height(MaterialTheme.spacing.xs))
         Text(
-            text = error.message,
+            text = stringResource(error.message),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -86,7 +88,7 @@ fun ErrorState(
                     modifier = Modifier.size(ButtonDefaults.IconSize)
                 )
                 Spacer(Modifier.width(ButtonDefaults.IconSpacing))
-                Text("Try again")
+                Text(stringResource(R.string.try_again))
             }
         }
     }

@@ -1,5 +1,10 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.yugentech.ryori.ui.main.recipeListScreen
 
+import com.yugentech.ryori.R
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,7 +21,8 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -72,7 +78,7 @@ fun RecipeListScreen(
                         // Always laid out (empty while loading) so the title doesn't jump up when
                         // the count arrives.
                         Text(
-                            text = if (!uiState.isLoading && uiState.error == null) "${uiState.recipes.size} recipes" else "",
+                            text = if (!uiState.isLoading && uiState.error == null) pluralStringResource(R.plurals.recipes_count, uiState.recipes.size, uiState.recipes.size) else "",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -80,7 +86,7 @@ fun RecipeListScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 scrollBehavior = scrollBehavior,
@@ -102,7 +108,7 @@ fun RecipeListScreen(
                     .padding(innerPadding),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator()
+                CircularWavyProgressIndicator()
             }
 
             error != null -> ErrorState(
@@ -120,13 +126,13 @@ fun RecipeListScreen(
                     .padding(MaterialTheme.spacing.xl)
             ) {
                 Text(
-                    text = "Nothing here yet",
+                    text = stringResource(R.string.list_empty_title),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(Modifier.height(MaterialTheme.spacing.xs))
                 Text(
-                    text = "No recipes match this yet. Try another one.",
+                    text = stringResource(R.string.list_empty_message),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -139,7 +145,7 @@ fun RecipeListScreen(
                     start = MaterialTheme.spacing.m,
                     end = MaterialTheme.spacing.m,
                     top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.s,
-                    bottom = navBarPadding.calculateBottomPadding()
+                    bottom = navBarPadding.calculateBottomPadding() + 8.dp
                 ),
                 horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.s),
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.s),

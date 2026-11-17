@@ -1,5 +1,7 @@
 package com.yugentech.ryori.ui.main.recipeScreen
 
+import com.yugentech.ryori.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -87,7 +89,7 @@ fun RecipeDetailsTopBar(
                 IconButton(onClick = onBackClick) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back"
+                        contentDescription = stringResource(R.string.back)
                     )
                 }
             },
@@ -96,7 +98,7 @@ fun RecipeDetailsTopBar(
                     IconButton(onClick = onShareClick) {
                         Icon(
                             imageVector = Icons.Default.Share,
-                            contentDescription = "Share",
+                            contentDescription = stringResource(R.string.share),
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                     }

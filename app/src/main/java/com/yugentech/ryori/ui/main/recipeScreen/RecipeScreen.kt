@@ -1,5 +1,10 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.yugentech.ryori.ui.main.recipeScreen
 
+import com.yugentech.ryori.R
+import androidx.compose.ui.res.stringResource
+import android.content.Context
 import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -45,7 +50,8 @@ import androidx.compose.material.icons.rounded.ShoppingBasket
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -151,7 +157,7 @@ fun RecipeScreen(
                 subtitle = recipe?.let { listOfNotNull(it.category, it.area ?: it.glass).joinToString("  •  ") },
                 isVisible = showTopBarTitle,
                 onBackClick = onBack,
-                onShareClick = recipe?.let { { context.startActivity(shareIntent(it)) } },
+                onShareClick = recipe?.let { { context.startActivity(shareIntent(context, it)) } },
                 scrollBehavior = scrollBehavior
             )
         }
@@ -159,7 +165,7 @@ fun RecipeScreen(
         val recipe = uiState.recipe
         when {
             uiState.isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+                CircularWavyProgressIndicator()
             }
 
             recipe == null -> ErrorState(
@@ -269,14 +275,14 @@ private fun RecipeContent(
                         Button(onClick = { uriHandler.openUri(url) }, modifier = Modifier.weight(1f)) {
                             Icon(Icons.Rounded.PlayCircle, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(MaterialTheme.spacing.s))
-                            Text("Watch video")
+                            Text(stringResource(R.string.recipe_watch_video))
                         }
                     }
                     recipe.sourceUrl?.let { url ->
                         FilledTonalButton(onClick = { uriHandler.openUri(url) }, modifier = Modifier.weight(1f)) {
                             Icon(Icons.AutoMirrored.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(MaterialTheme.spacing.s))
-                            Text("Source")
+                            Text(stringResource(R.string.recipe_source))
                         }
                     }
                 }
@@ -290,9 +296,9 @@ private fun RecipeContent(
         if (recipe.ingredients.isNotEmpty()) {
             item(key = "ingredients_header") {
                 Column {
-                    SectionHeader(icon = Icons.Rounded.ShoppingBasket, title = "Ingredients")
+                    SectionHeader(icon = Icons.Rounded.ShoppingBasket, title = stringResource(R.string.recipe_ingredients))
                     Text(
-                        text = "${uiState.checkedIngredients.size} of ${recipe.ingredients.size} ready. Tap to tick off.",
+                        text = stringResource(R.string.recipe_ingredients_ready, uiState.checkedIngredients.size, recipe.ingredients.size),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = horizontal.padding(bottom = MaterialTheme.spacing.s)
@@ -312,7 +318,7 @@ private fun RecipeContent(
 
         if (recipe.steps.isNotEmpty()) {
             item(key = "method_header") {
-                SectionHeader(icon = Icons.Rounded.FormatListNumbered, title = "Method")
+                SectionHeader(icon = Icons.Rounded.FormatListNumbered, title = stringResource(R.string.recipe_method))
             }
             itemsIndexed(recipe.steps, key = { index, _ -> "step_$index" }) { index, step ->
                 StepRow(
@@ -328,7 +334,7 @@ private fun RecipeContent(
             item(key = "related_header") {
                 SectionHeader(
                     icon = Icons.Rounded.AutoAwesome,
-                    title = if (recipe.type == RecipeType.MEAL) "More ${recipe.category.orEmpty()} dishes" else "More drinks"
+                    title = if (recipe.type == RecipeType.MEAL) stringResource(R.string.recipe_more_dishes, recipe.category.orEmpty()) else stringResource(R.string.recipe_more_drinks)
                 )
             }
             item(key = "related") {
@@ -341,7 +347,8 @@ private fun RecipeContent(
         }
 
         item(key = "nav_bar_space") {
-            Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
+            // As in Sessions, content ends 8dp above the navigation bar
+            Spacer(Modifier.padding(bottom = 8.dp).windowInsetsBottomHeight(WindowInsets.navigationBars))
         }
     }
 }
@@ -423,8 +430,8 @@ private fun InfoChip(
 @Composable
 private fun GlanceRow(recipe: Recipe, modifier: Modifier = Modifier) {
     val third = when (recipe.type) {
-        RecipeType.MEAL -> (recipe.area ?: recipe.category ?: "Dish") to "Cuisine"
-        RecipeType.DRINK -> (recipe.glass ?: "Drink") to "Served in"
+        RecipeType.MEAL -> (recipe.area ?: recipe.category ?: stringResource(R.string.recipe_dish)) to stringResource(R.string.recipe_cuisine)
+        RecipeType.DRINK -> (recipe.glass ?: stringResource(R.string.recipe_drink)) to stringResource(R.string.recipe_served_in)
     }
     Row(
         horizontalArrangement = Arrangement.spacedBy(2.dp),
@@ -546,7 +553,7 @@ private fun IngredientRow(
             }
             Icon(
                 imageVector = if (checked) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
-                contentDescription = if (checked) "Ticked" else "Not ticked",
+                contentDescription = if (checked) stringResource(R.string.recipe_ticked) else stringResource(R.string.recipe_not_ticked),
                 tint = if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
             )
         }
@@ -597,18 +604,20 @@ private fun StepRow(number: Int, text: String, shape: Shape, modifier: Modifier 
     }
 }
 
-private fun shareIntent(recipe: Recipe): Intent {
+private fun shareIntent(context: Context, recipe: Recipe): Intent {
     val link = recipe.sourceUrl ?: recipe.videoUrl
     val text = buildString {
-        append("Try this ")
-        append(if (recipe.type == RecipeType.MEAL) "recipe" else "drink")
-        append(" on Ryori: ")
-        append(recipe.name)
+        append(
+            context.getString(
+                if (recipe.type == RecipeType.MEAL) R.string.recipe_share_meal else R.string.recipe_share_drink,
+                recipe.name
+            )
+        )
         if (link != null) append("\n").append(link)
     }
     val send = Intent(Intent.ACTION_SEND).apply {
         type = "text/plain"
         putExtra(Intent.EXTRA_TEXT, text)
     }
-    return Intent.createChooser(send, "Share recipe")
+    return Intent.createChooser(send, context.getString(R.string.recipe_share_title))
 }
