@@ -1,9 +1,13 @@
 <div align="center">
 
+<img src="graphics/Feature%20Graphic.png" width="100%" alt="Ryori Feature Graphic"/>
+
+<br/>
+
 <table border="0" width="100%">
     <tr>
         <td width="30%" align="center" valign="middle">
-            <img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp" width="180" alt="Ryori App Icon"/>
+            <img src="graphics/App%20Icon.png" width="180" alt="Ryori App Icon"/>
         </td>
         <td width="70%" valign="middle">
             <h1>Ryori</h1>
@@ -13,23 +17,19 @@
     </tr>
 </table>
 
+<p align="center">
+  <a href="https://github.com/MohammadAliUstad/Ryori/releases"><img alt="Get it on Github" src="badges/github.png" width="200"/></a>
+</p>
+
+<p align="center">
+  <b>Coming soon to Google Play</b>
+</p>
+
 <br/>
 
 [Report Bug](https://github.com/MohammadAliUstad/Ryori/issues) · [Request Feature](https://github.com/MohammadAliUstad/Ryori/issues) · [Download Latest Release](https://github.com/MohammadAliUstad/Ryori/releases)
 
 </div>
-
----
-
-## Table of Contents
-
-- [Overview](#overview)
-- [Key Features](#-key-features)
-- [Screenshots](#-screenshots)
-- [Technical Architecture](#technical-architecture)
-- [Setup & Installation](#setup--installation)
-- [Contributing](#-contributing)
-- [Contact & Support](#contact--support)
 
 ---
 
@@ -86,6 +86,7 @@ Recipes are powered by **TheMealDB**, with non-alcoholic drinks from **TheCockta
 - **8 color themes:** Dynamic (Material You), Ryori, Lagoon, Grove, Harvest, Sakura, Alpine and Twilight.
 - **Light, dark and system modes,** plus **AMOLED black**.
 - **6 fonts:** Google Sans, Outfit, Manrope, Urbanist, Figtree and Garamond.
+- **10 languages:** English, Spanish, Portuguese (Brazil), French, German, Hindi, Japanese, Korean, Simplified Chinese and Russian. Follow your phone's language or choose one in the app.
 - **Gentle haptics** on taps and toggles, which you can switch off.
 
 ---
@@ -97,30 +98,30 @@ Recipes are powered by **TheMealDB**, with non-alcoholic drinks from **TheCockta
 <table width="100%">
   <tr>
     <td align="center" width="33%">
-      <img src="Screenshots/Home.png" alt="Home" width="100%"/>
+      <img src="screenshots/Home.png" alt="Home: Cook something new" width="100%"/>
       <br/><sub><b>Home</b></sub>
     </td>
     <td align="center" width="33%">
-      <img src="Screenshots/Search.png" alt="Search" width="100%"/>
-      <br/><sub><b>Search</b></sub>
+      <img src="screenshots/Recipe.png" alt="Recipe: Every step guided" width="100%"/>
+      <br/><sub><b>Recipe</b></sub>
     </td>
     <td align="center" width="33%">
-      <img src="Screenshots/Recipe.png" alt="Recipe" width="100%"/>
-      <br/><sub><b>Recipe</b></sub>
+      <img src="screenshots/Explore.png" alt="Explore: Find your craving" width="100%"/>
+      <br/><sub><b>Explore</b></sub>
     </td>
   </tr>
   <tr>
     <td align="center" width="33%">
-      <img src="Screenshots/Categories.png" alt="Categories" width="100%"/>
-      <br/><sub><b>Categories</b></sub>
+      <img src="screenshots/Settings.png" alt="Settings: Manage your preferences" width="100%"/>
+      <br/><sub><b>Settings</b></sub>
     </td>
     <td align="center" width="33%">
-      <img src="Screenshots/More.png" alt="More" width="100%"/>
-      <br/><sub><b>More</b></sub>
-    </td>
-    <td align="center" width="33%">
-      <img src="Screenshots/Appearance.png" alt="Appearance" width="100%"/>
+      <img src="screenshots/Appearance.png" alt="Appearance: Designed for you" width="100%"/>
       <br/><sub><b>Appearance</b></sub>
+    </td>
+    <td align="center" width="33%">
+      <img src="screenshots/Language.png" alt="Language: Choose your language" width="100%"/>
+      <br/><sub><b>Language</b></sub>
     </td>
   </tr>
 </table>
@@ -211,6 +212,24 @@ Contributions are what make the open source community such an amazing place to l
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a pull request
+
+---
+
+## 📄 License
+
+Ryori is free and open source software, licensed under the **GNU General Public License v3.0 or later** (`GPL-3.0-or-later`). See [`LICENSE`](LICENSE) for the full text.
+
+In short, you may use, study, modify and share the code. If you distribute a modified version, you must release its full source code under the same license and keep the copyright notices.
+
+### Name and branding
+
+The license covers the code, not the brand. The **Ryori** name, the **Yugen Tech** name, the logo, the app icon and the artwork in `graphics/`, `badges/` and `screenshots/` are **not** licensed under the GPL and remain all rights reserved.
+
+If you publish a fork, give it a different name, icon and application ID, and don't present it as an official Ryori release. You're welcome to describe it as "based on Ryori" and link back here.
+
+### Contributing and licensing
+
+By submitting a pull request, you agree that your contribution is licensed under GPL-3.0-or-later.
 
 ---
 
